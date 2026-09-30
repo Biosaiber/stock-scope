@@ -1,12 +1,37 @@
-# StockScope – Architecture
+<p align="center">
+  <img src="./assets/stockscope-banner.png" alt="StockScope – See what matters" width="100%">
+</p>
+
+<p align="center">
+  <strong>Warehouse stock visualization and analysis application.</strong>
+</p>
+
+---
+
+## About StockScope
+
+I work with warehouse stock every day and often see the same problem:
+the data already exists, but getting a simple and useful answer from it can take too much time.
+
+The goal of StockScope is not to replace, duplicate or compete with the existing warehouse management system.
+
+StockScope works as an additional layer on top of the warehouse data that already exists.
+
+Its purpose is to make that data easier to see, understand and use, and to help turn it into useful operational information.
+
+---
+
+## Architecture
 
 StockScope is a warehouse stock visualization and analysis application.
 
 I work with warehouse stock every day and often see the same problem: the data already exists, but getting a simple and useful answer from it can take too much time.
 
-The goal of StockScope is not to replace the existing warehouse management system.
+The goal of StockScope is not to replace, duplicate or compete with the existing warehouse management system.
 
-The goal is to take the warehouse data we already have and make it easier to see, understand and use.
+StockScope should work as an additional layer on top of the warehouse data that already exists.
+
+Its purpose is to make that data easier to see, understand and use, and to help turn it into useful operational information.
 
 ---
 
@@ -14,9 +39,9 @@ The goal is to take the warehouse data we already have and make it easier to see
 
 StockScope will be developed in three main phases.
 
-- **Phase 1 – Warehouse Visual**
-- **Phase 2 – Warehouse Intelligence**
-- **Phase 3 – Advanced Capacity, History & AI**
+**Phase 1 – Warehouse Visual**  
+**Phase 2 – Warehouse Intelligence**  
+**Phase 3 – Advanced Capacity, History & AI**
 
 Each phase should produce something useful on its own.
 
@@ -28,7 +53,9 @@ Each phase should produce something useful on its own.
 
 The first version should turn the existing Location Report into a clear visual overview of the warehouse.
 
-The warehouse layout is still changing, so StockScope should not depend on having final location dimensions before development can start.
+The warehouse layout is still changing, so StockScope should not depend on having final location dimensions or a final warehouse map before development can start.
+
+---
 
 ## Data Import
 
@@ -45,6 +72,32 @@ If API access becomes available later, Excel can be replaced by an API adapter w
 Future flow:
 
 **HQ API → API Adapter → StockScope Models → Application**
+
+---
+
+## Data Snapshots
+
+StockScope should start preserving warehouse snapshots as early as possible.
+
+Each imported report can represent the state of the warehouse at a specific point in time.
+
+These snapshots do not need to provide advanced historical analytics in Phase 1.
+
+The purpose is to start building historical data that can be used by later versions of StockScope.
+
+Possible information to preserve includes:
+
+- import date and time
+- total number of objects
+- objects per location
+- article quantities
+- statuses
+- location occupancy
+- Push Items
+
+Starting this early prevents useful historical information from being lost before the historical analysis features are developed.
+
+---
 
 ## Warehouse Overview
 
@@ -64,18 +117,63 @@ Example:
 
 Selecting a location should open its details.
 
+---
+
+## Warehouse Views
+
+The Warehouse Overview should support two ways of looking at the same warehouse data.
+
+### Compact View
+
+The Compact View should provide a structured overview of all warehouse locations.
+
+Locations can be displayed as regular visual blocks or columns showing the most important information at a glance, such as:
+
+- location code
+- occupancy
+- available capacity
+- status warnings
+- Push Items
+- other conditions requiring attention
+
+The purpose of this view is to quickly understand the current state of the warehouse without depending on the physical warehouse layout.
+
+### Map View
+
+The Map View should represent locations using the real warehouse layout.
+
+It should use the same StockScope data as the Compact View, but show locations in their approximate physical positions inside the warehouse.
+
+This view should make it easier to understand where stock, warnings or available capacity are physically located.
+
+Both views should lead to the same Location Detail.
+
+Search and filters should work across both views.
+
+The Compact View can be developed first because it does not depend on having a final warehouse layout.
+
+The Map View can be added when the warehouse layout and location positions are sufficiently stable.
+
+---
+
 ## Location Detail
 
-A location detail should show:
+A single warehouse location can contain multiple objects and multiple article types.
 
-- object number
-- article
-- description
-- quantity
-- status
+This is especially important for locations containing tools, where several different articles may be stored in the same location.
+
+A location detail should therefore be able to show multiple stock records, including:
+
+- object numbers
+- articles
+- descriptions
+- quantities
+- statuses
 - other relevant stock information
 
-This makes it possible to move from seeing that a location has a problem to seeing exactly which object is causing it.
+This makes it possible to move from seeing that a location has a problem to seeing exactly which objects or articles are causing it.
+
+---
 
 ## Manual Capacity
 
@@ -91,6 +189,8 @@ If 302 objects are currently stored there, StockScope can calculate:
 
 The data model can already contain dimensions for future use even if they are not yet used in the calculation.
 
+---
+
 ## Status Visualization
 
 Important or unusual statuses should be visible directly from the warehouse overview.
@@ -101,12 +201,14 @@ Opening the location then shows the exact object and its status.
 
 The purpose is to make exceptions easy to notice without filling the overview with unnecessary information.
 
+---
+
 ## Push Items
 
 StockScope should support at least:
 
-- **Push Item Outbound**
-- **Push Item ASML**
+- Push Item Outbound
+- Push Item ASML
 
 For each Push Item it should be possible to see:
 
@@ -114,14 +216,32 @@ For each Push Item it should be possible to see:
 - quantity
 - location
 - relevant status
-- planned or expected sending day, when applicable or note
+- planned or expected sending day, when applicable
+- note
 - last modification
 
 For example:
 
 **NEWAYS56 | 6 pcs | BS-F08 | Thursday | Prepared for outbound**
 
-The note or planned day provide useful operational context without turning StockScope into a planning system.
+The note or planned day provides useful operational context without turning StockScope into a planning system.
+
+---
+
+## Basic Stock Control
+
+Phase 1 should already provide a simple Stock Control view based on information available from the imported warehouse data.
+
+It should help identify:
+
+- unexpected statuses
+- locations requiring attention
+- available Push Items
+- other basic stock exceptions that can be detected directly from the current data
+
+The purpose is to help the stock controller focus on exceptions instead of manually checking everything.
+
+More advanced Stock Control functions that depend on relationships between boxes and tools will be added in Phase 2.
 
 ---
 
@@ -130,6 +250,8 @@ The note or planned day provide useful operational context without turning Stock
 ## Goal
 
 Phase 2 should move StockScope from simply displaying warehouse data to understanding relationships inside that data.
+
+---
 
 ## Complete Sets
 
@@ -145,6 +267,8 @@ StockScope should calculate how many complete sets are currently available and s
 
 The components do not need to be stored in the same location.
 
+---
+
 ## Quantity-Based Set Calculation
 
 The warehouse data does not always tell us which specific tool is physically paired with which specific box.
@@ -154,6 +278,8 @@ For example:
 **10 boxes + 5 compatible tools = 5 possible complete sets**
 
 StockScope therefore needs to support calculations based on quantities, not only direct object-to-object relationships.
+
+---
 
 ## Find New Sets
 
@@ -169,23 +295,47 @@ The user should be able to see:
 - available quantities
 - locations of those components
 
-## Stock Control
+---
 
-StockScope should help the stock controller focus on exceptions instead of manually checking everything.
+## Advanced Stock Control
 
-It could highlight:
+Phase 2 should extend the basic Stock Control functionality with information calculated from relationships between warehouse items.
 
-- unexpected statuses
-- locations requiring attention
-- available Push Items
+It should add:
+
 - possible new sets
-- unusual stock conditions
+- incomplete sets
+- missing set components
+- other unusual conditions discovered through set and relationship analysis
 
-The idea is simple:
+The idea remains simple:
 
-Instead of asking **"What should I check?"**
+Instead of asking:
 
-StockScope should help answer **"These are the things worth checking."**
+> **"What should I check?"**
+
+StockScope should help answer:
+
+> **"These are the things worth checking."**
+
+---
+
+## Basic Historical Comparison
+
+Because StockScope has already started preserving warehouse snapshots, Phase 2 can begin using this data for simple comparisons.
+
+This could include:
+
+- total stock growth or decline
+- changes in object quantities
+- changes in location occupancy
+- new or removed objects
+- basic location changes
+- basic status changes
+
+The purpose at this stage is not to build advanced analytics.
+
+It is to start using the historical data that StockScope has already collected.
 
 ---
 
@@ -205,11 +355,13 @@ StockScope can then calculate physical occupancy and available space more accura
 
 Until then, manual capacity from Phase 1 remains the fallback.
 
-## Historical Data
+---
 
-StockScope can later store regular warehouse snapshots.
+## Advanced Historical Analysis
 
-Comparing snapshots can show:
+Because warehouse snapshots are collected from the earlier phases, StockScope can gradually build a history of how the warehouse changes over time.
+
+Later versions can use this data to analyse:
 
 - new or removed objects
 - location changes
@@ -220,6 +372,12 @@ Comparing snapshots can show:
 - locations that are repeatedly emptied and filled
 - boxes that have not moved for a long time
 
+Some simple comparisons, such as total stock growth or decline, may already become available earlier.
+
+Phase 3 should focus on deeper historical analysis, trends and patterns rather than beginning the collection of historical data.
+
+---
+
 ## AI Suggester
 
 AI should be added only after StockScope has reliable data and analytics.
@@ -228,13 +386,13 @@ The purpose is not simply to add a chatbot.
 
 AI should use information already calculated by StockScope and provide useful suggestions such as:
 
-> "6 additional complete sets can currently be created."
+> **"6 additional complete sets can currently be created."**
 
-> "BS-F08 is approaching its capacity."
+> **"BS-F08 is approaching its capacity."**
 
-> "These boxes have not moved for a long period."
+> **"These boxes have not moved for a long period."**
 
-> "These Push Items are currently available."
+> **"These Push Items are currently available."**
 
 The normal StockScope business logic should remain deterministic.
 
@@ -248,7 +406,7 @@ HQ Pack already has a company-wide Scanner integrated with its warehouse systems
 
 I do not want to replace or compete with it.
 
-This would be a separate personal project where I could experiment with a modern **scan-first warehouse workflow** based on my own warehouse experience.
+This would be a separate personal project where I could experiment with a modern scan-first warehouse workflow based on my own warehouse experience.
 
 The default screen should always be ready for scanning while functions such as Stock Control, Batch Scanning or Search remain easily accessible.
 
@@ -271,15 +429,54 @@ For a common location change:
 
 **Scan Object → Show Info + Suggested Location → Scan Actual Location → Confirmation → Enter → Ready for Next Scan**
 
-The suggested location is only guidance. The worker still physically scans the actual destination location.
+The suggested location is only guidance.
 
-Other actions such as **Change Status** should be available immediately after scanning the object without requiring unnecessary navigation.
+The worker still physically scans the actual destination location.
+
+Other actions such as Change Status should be available immediately after scanning the object without requiring unnecessary navigation.
 
 The interface should always clearly confirm what changed and then return directly to the ready-to-scan state.
 
 As a small additional experiment, the time between the object scan and destination scan could also be used to estimate warehouse movement times.
 
 This would remain a personal learning and portfolio project focused mainly on fast workflow and modern warehouse UI/UX.
+
+---
+
+# Expected Improvements
+
+StockScope should not only make warehouse information easier to see.
+
+Where possible, its impact should also be measurable.
+
+Some expected improvements include:
+
+- less time spent searching through reports
+- faster identification of stock requiring attention
+- faster access to location and object information
+- easier identification of available Push Items
+- faster understanding of warehouse occupancy
+- less manual comparison of warehouse data
+- faster identification of possible complete sets in later phases
+
+Some of these improvements can be partially quantified.
+
+For example, the time required to find specific information using the current workflow can be estimated and later compared with the same task performed using StockScope.
+
+Historical warehouse reports can also be used as test data to compare how easily information can be extracted using the old workflow and StockScope.
+
+Possible measurements could include:
+
+- time required to find a specific object
+- time required to inspect a location
+- time required to identify an unexpected status
+- time required to find available Push Items
+- time required to determine warehouse occupancy
+- time required to identify components for a complete set
+
+The purpose is not to prove that every improvement can be reduced to a number.
+
+The goal is to have a practical way to evaluate whether StockScope actually makes warehouse work faster and easier.
 
 ---
 
@@ -311,9 +508,15 @@ The eleven architecture steps describe **how it will be designed and built**.
 
 I work with warehouse stock every day and one problem I keep running into is that we have a lot of data, but getting a simple answer from that data can take too much time.
 
-The information is there. We know what boxes we have, where they are located and what they contain. But when we need to make a decision, we often have to search through the system, filter data or export it to Excel and put the information together ourselves.
+The information is there.
+
+We know what boxes we have, where they are located and what they contain.
+
+But when we need to make a decision, we often have to search through the system, filter data or export it to Excel and put the information together ourselves.
 
 StockScope started as an idea to make this information easier to see and, more importantly, easier to use.
+
+---
 
 ## Problems I Want to Solve
 
@@ -325,23 +528,40 @@ A product or shipment can require several different boxes or tools to create one
 
 StockScope should automatically calculate how many complete sets can currently be created.
 
+---
+
 ### Can we build a set from stock spread across different locations?
 
 The parts needed for a set do not necessarily have to be stored together.
 
 StockScope should answer:
 
-**Do we currently have everything needed to make the set, and where can I find it?**
+> **Do we currently have everything needed to make the set, and where can I find it?**
+
+---
 
 ### Where are our Push Items?
 
 Push Items should be easy to find without searching through a large amount of stock data.
 
-StockScope should show what is available, how much is available, where it is located and any useful planning information or note.
+StockScope should show:
+
+- what is available
+- how much is available
+- where it is located
+- relevant status
+- expected or planned sending day, when applicable
+- useful operational notes
+
+---
 
 ### What is stored in each location?
 
-Selecting a location should immediately show its contents, quantities and relevant stock information.
+A warehouse location can contain multiple objects and multiple article types.
+
+Selecting a location should immediately show its contents, quantities, statuses and other relevant stock information.
+
+---
 
 ### How full is the warehouse?
 
@@ -350,6 +570,21 @@ StockScope should visualize location occupancy and available capacity.
 Initially this can use manually configured capacity.
 
 Later it can use physical location and object dimensions.
+
+---
+
+### What requires attention?
+
+Instead of manually checking every location and every stock record, StockScope should help identify exceptions.
+
+This can include:
+
+- unexpected statuses
+- locations requiring attention
+- available Push Items
+- other unusual stock conditions
+
+Later versions can add more intelligent checks based on relationships between boxes, tools and complete sets.
 
 ---
 
@@ -369,6 +604,7 @@ Later versions should also answer:
 - **How many complete sets do we have?**
 - **Can we create additional sets?**
 - **Where are the required components?**
+- **How is the warehouse changing over time?**
 
 The first step is simple:
 
@@ -378,20 +614,119 @@ The first step is simple:
 
 # 2. User Flow
 
+---
+
 # 3. Data Models
+
+---
 
 # 4. Services & State
 
+---
+
 # 5. Components
+
+## UI Design System
+
+StockScope should use a small and consistent design system instead of styling individual components independently.
+
+The design system should eventually define reusable rules for:
+
+- spacing
+- typography
+- colors
+- status indicators
+- buttons
+- cards
+- tables
+- location blocks
+- warnings
+- responsive layout
+
+Reusable Angular components and shared design tokens should be preferred over repeating component-specific CSS.
+
+The specific styling technology does not need to be decided yet.
+
+---
 
 # 6. Routing
 
+---
+
 # 7. Implementation
+
+---
 
 # 8. Validation
 
+---
+
 # 9. Testing
+
+---
 
 # 10. Data Flow Check
 
+---
+
 # 11. Deployment & Production
+
+---
+
+# Personal Notes
+
+## What is a Data Adapter?
+
+A Data Adapter is a layer between external data and the internal StockScope models.
+
+For example, the Location Report may contain data using names, columns and structures defined by the existing warehouse system.
+
+StockScope should not make the whole application depend directly on that structure.
+
+Instead:
+
+**Location Report → Excel Import → Data Adapter → StockScope Models → Application**
+
+The Data Adapter reads the imported warehouse data and translates it into the internal structure expected by StockScope.
+
+For example:
+
+**External Excel data**
+
+`Location = BS-F08`  
+`Article Description = NEWAYS56`  
+`Qty = 6`
+
+can be transformed into a StockScope object with properties defined by our own models.
+
+The rest of the application then works with the StockScope model instead of directly with the Excel structure.
+
+---
+
+## What is an API Adapter?
+
+An API Adapter has the same responsibility.
+
+The difference is the source of the data.
+
+Instead of receiving data from an imported Excel report:
+
+**HQ API → API Adapter → StockScope Models → Application**
+
+The API Adapter translates the data returned by the API into the same StockScope models.
+
+This means the main application does not need to care whether the data originally came from Excel or an API.
+
+Today:
+
+**Excel → Data Adapter → StockScope**
+
+Later:
+
+**API → API Adapter → StockScope**
+
+The source changes.
+
+The StockScope application does not need to be rebuilt around a completely different data structure.
+
+That is the main reason for having the adapter layer.
