@@ -800,23 +800,68 @@ Each review reason should have its own visual indicator, such as a small colored
 
 ## Locations
 
-Locations will have their own main page accessible from the sidebar.
+The Locations page is the central place for browsing and reviewing warehouse locations.
 
-The Locations page contains all warehouse locations and provides filtering by:
+StockScope uses one Locations page with different filter states instead of separate pages for different workflows.
 
-- review status
+The current filter and sorting state should be represented by query parameters.
 
-- review reason
+Examples:
 
+`/locations`
+
+`/locations?status=review&sort=priority`
+
+`/locations?status=handled`
+
+This allows the same page to be opened from different parts of the application with the appropriate view already selected.
+
+The page includes:
+
+- reactive search by location code
+- All, To Review and Handled views
+- Review Reason filter
+- minimum and maximum occupancy filter
+- sorting
+- location count
+
+Review Reason filters should display the current number of matching locations.
+
+Reasons with no current matches should remain visible but disabled.
+
+Each location row should show:
+
+- location code
 - occupancy
+- item count
+- active reviews
+- last checked
 
-- location
+Hovering over the item count can provide a small preview of article names without opening the location.
 
-- other relevant properties
+Clicking a location opens the Location Detail page.
 
-`View All` from the Dashboard's Locations to Review section opens the same Locations page with the appropriate review filter already applied.
+`Last Checked` represents the last time the location was physically inspected during Stock Control work.
 
-Selecting a location opens its Location Detail page.
+A location can be marked as Checked independently from its review state.
+
+For priority sorting, a location is ordered according to its highest-priority active review.
+
+Current review priority from lowest to highest:
+
+1. Low Occupancy
+2. Nearly Full
+3. Unexpected / Mixed Item
+4. Wrong Status
+5. Push Item
+6. Full
+7. Over Capacity
+
+`View All` from the Dashboard's Locations to Review section opens the same Locations page with the To Review filter and priority sorting already applied.
+
+Future versions may expand reactive search to find locations by article or barcode, for example `NEWAYS56`, `H343791` or `DUONXE-03`.
+
+Future versions should also evaluate whether users should be able to manually add a location to review when an issue is discovered during physical Stock Control work.
 
 ---
 
