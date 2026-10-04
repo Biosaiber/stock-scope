@@ -867,25 +867,182 @@ Future versions should also evaluate whether users should be able to manually ad
 
 ## Location Detail
 
-A Location Detail page represents one warehouse location.
+The Location Detail page represents one warehouse location and should provide immediate access to the information needed during Stock Control work.
 
-It will provide access to:
+The page should remain compact. The user should be able to open a location and quickly see its current state, active reviews and all items stored there without navigating through additional pages.
 
-- location information
+### Location Overview
 
-- occupancy
+The top of the page provides a compact overview of the location.
 
-- active review reasons
+It should include:
 
-- items currently stored at the location
+- location code
+- current occupancy
+- total number of items
+- number of active reviews
+- articles currently present at the location
+- last physical check
+- capacity, when available
 
-- review status
+The active review count includes both location-level and item-level active reviews.
 
-- location history
+The article overview can show the article name together with the number of items, for example:
 
-Selecting an individual item can open an Item Detail modal without leaving the Location Detail page.
+`FRENCKEN07 (27) · NEWAYS56 (15)`
 
-The detailed design of the Location Detail page will be defined later in the User Flow process.
+The header should remain compact so that the item list is visible without unnecessary scrolling.
+
+### Location Reviews
+
+Location-level reviews are displayed directly below the location overview.
+
+Examples include:
+
+- Low Occupancy
+- Nearly Full
+- Full
+- Over Capacity
+
+Each review can be handled individually using `Mark as Handled`.
+
+If the location has no active location-level reviews, this section is not displayed.
+
+Item-level reviews are not repeated in this section. They are displayed directly next to the affected item in the item list.
+
+### Items
+
+The Location Detail page displays all individual items currently stored at the location.
+
+The list is not limited to a preview. If a location contains 8, 22 or 46 items, all items should be available directly on the Location Detail page.
+
+Each item row should include:
+
+- item ID / H-code
+- article
+- status
+- active review, when applicable
+- `Handle` action for an active item-level review
+
+For example:
+
+| ID | Article | Status | Review |
+| --- | --- | --- | --- |
+| H145784 | FRENCKEN07 | Storage | — |
+| H145785 | FRENCKEN07 | Storage | Push Item |
+| H145786 | NEWAYS56 | Cleaning | Wrong Status |
+
+Item-level reviews such as `Wrong Status`, `Unexpected / Mixed Item` and `Push Item` are therefore shown directly in the context of the affected item.
+
+### Item Filters
+
+The item list can be filtered without leaving the Location Detail page.
+
+Phase 1 should support:
+
+- item ID search
+- article filter
+- status filter
+- `All / Reviews only`
+
+Articles available at the current location can be shown as selectable checkboxes with their item counts.
+
+For example:
+
+`☑ FRENCKEN07 (12)`
+
+`☑ NEWAYS56 (7)`
+
+`☑ DUONXE-03 (3)`
+
+All articles are selected by default.
+
+The user can select or deselect individual articles to quickly narrow the item list.
+
+The page should show the number of currently displayed items, for example:
+
+`Showing 7 of 22 items`
+
+Filters should work together and update the visible item list without leaving the page.
+
+### Items Page Integration
+
+Location Detail provides the item functionality needed for working with one specific location.
+
+A separate Items page will provide a broader view for searching and filtering items across the warehouse.
+
+The user can open the current Location Detail item results in the Items page while preserving the relevant filter context.
+
+For example:
+
+`/items?location=BS-A04`
+
+or:
+
+`/items?location=BS-A04&article=NEWAYS56`
+
+This allows the user to move from a location-focused workflow into a broader item-focused workflow without losing context.
+
+### Related Articles and Sets
+
+Phase 1 does not calculate complete sets.
+
+However, the Location Detail design should remain compatible with future relations between articles.
+
+For example, if `WETZLAR901` represents a box and `WETZLAR902` represents a related tool, both articles are displayed normally in Phase 1.
+
+A later phase can use their relationship to provide information such as:
+
+`5 complete sets · 15 empty boxes`
+
+The future Items page should also be able to display multiple related articles together through filters.
+
+### Mark as Checked
+
+`Mark as Checked` represents a physical Stock Control inspection of the location.
+
+When the user marks a location as checked:
+
+- the `Last Checked` timestamp is updated
+- the physical check is recorded in location history
+
+Marking a location as checked does not automatically handle or resolve its active reviews.
+
+`Checked` therefore represents a physical inspection of the location, while `Handled` represents an action taken on a specific review.
+
+### Location History
+
+The Location Detail page provides a compact history section.
+
+Phase 1 should include a simple occupancy trend based on stored snapshots, for example:
+
+`76% → 82% → 94% → 103%`
+
+The page can also show recent activity such as:
+
+- Over Capacity detected
+- Location physically checked
+- Wrong Status resolved
+
+The goal is to provide useful recent context without turning the Location Detail page into a full analytics page.
+
+More advanced historical analysis belongs to the dedicated Trends functionality and later development phases.
+
+### Navigation
+
+When a user opens Location Detail from a filtered Locations view, returning to Locations should preserve the previous context whenever possible.
+
+For example:
+
+`/locations?status=review&sort=priority`
+
+→ `BS-A04`
+
+→ Back to Locations
+
+The user should return to the same filtered and sorted Locations view instead of being returned to the default `All Locations` view.
+
+This allows Stock Control work to continue without repeatedly rebuilding the same filters.
 
 ---
 
