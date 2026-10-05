@@ -1066,18 +1066,47 @@ Closing the modal returns the user to the same context from which it was opened.
 
 ### Item Information
 
-The Item Detail modal should show the most important information about the selected warehouse object.
-
 Phase 1 should include:
 
 - H-code
 - article
+- customer
+- customer article number
 - current location
+- location level
 - current status
+- dimensions, when available
+- Call Off information, when applicable
 - active item-level reviews
 - article relations
 
-The H-code represents the individual physical object, while the article represents its type.
+The Location Report already provides additional item information such as
+customer article number, length, width, unit and kinds.
+
+The `kinds` value does not need to be displayed directly.
+
+When the imported `kinds` data identifies an item as belonging to a Call Off
+list, StockScope should extract and display the relevant Call Off information.
+
+For example:
+
+`35 Call Off List ASML, RTM - Supplier Network`
+
+can be displayed as:
+
+`Call Off: ASML`
+
+If no Call Off information is present, the field should not be displayed.
+
+When dimensions are available, they should be displayed in a compact form.
+
+Example:
+
+`1.60 × 1.20 m`
+
+In Phase 1, dimensions are informational.
+
+Later phases can reuse the same data for more advanced capacity calculations.
 
 ### Relations
 
@@ -1185,6 +1214,183 @@ Handled → Open Again
 Reviews belong to the specific problem, not automatically to the entire location.
 
 This allows one location to contain several independent reviews with different states.
+
+---
+
+## Items
+
+Items will have their own main page accessible from the sidebar.
+
+The Items page provides a global view of individual warehouse objects across all locations.
+
+Each row represents one specific H-code.
+
+The page should make it possible to find individual objects and compare items across multiple articles, locations, statuses and review states without navigating through individual locations first.
+
+### Search
+
+The Items page should provide a single reactive search field.
+
+Phase 1 search should support:
+
+- H-code
+- article
+- customer article number
+
+Examples:
+
+`H398913`
+
+`ZEISS022`
+
+`4022.674.1152x`
+
+### Filters
+
+The Items page should support multi-select filtering.
+
+Phase 1 filters include:
+
+- Article
+- Location
+- Status
+- Review
+- Size
+- Call Off
+
+Multiple values can be selected within the same filter.
+
+Values inside one filter group use OR logic.
+
+Different filter groups are combined using AND logic.
+
+Example:
+
+`(ZEISS021 OR ZEISS022) AND (BS-A01 OR BS-A04) AND Storage AND Large`
+
+Active filters should remain visible and can be removed individually.
+
+A `Clear All` action resets all active filters.
+
+The page should also show how many items match the current filters.
+
+Example:
+
+`Showing 37 of 4,382 items`
+
+### Size Filter
+
+Size is an Article property.
+
+The Location Report already provides:
+
+- length
+- width
+- unit
+
+Phase 1 should provide simple size filters:
+
+- Small
+- Medium
+- Large
+
+The exact boundaries between these categories should not be defined until the real article dimension data has been analyzed.
+
+This avoids creating arbitrary size rules before understanding the actual warehouse data.
+
+### Call Off
+
+Call Off is an Article property rather than a property of an individual H-code.
+
+When an Article belongs to a Call Off list, a small visual indicator should be displayed next to the Article in the Items table.
+
+The indicator can provide additional information on hover.
+
+Example:
+
+`Call Off: ASML`
+
+Call Off should also be available as a filter.
+
+Selecting a Call Off filter shows all H-codes whose Article belongs to the selected Call Off.
+
+A separate Call Off table column is not required.
+
+### Items Table
+
+Each table row represents one individual warehouse object.
+
+Phase 1 should show:
+
+- H-code
+- article
+- customer article number
+- location
+- status
+- active review indicator
+
+Selecting the H-code or item row opens the Item Detail modal.
+
+Closing the modal returns the user to the same Items page context without losing filters, sorting or scroll position.
+
+### Location Preview
+
+The Location value in an item row should provide a quick preview on hover.
+
+The preview can include:
+
+- occupancy
+- number of items
+- number of active reviews
+- last checked
+- article counts
+
+The preview is informational only and should not contain editing or review actions.
+
+Selecting the Location opens its Location Detail page.
+
+### Query Parameters
+
+The Items page should use query parameters to represent filters and sorting where appropriate.
+
+Examples:
+
+`/items`
+
+`/items?location=BS-A04`
+
+`/items?location=BS-A04&article=NEWAYS56`
+
+`/items?status=storage`
+
+This allows other parts of StockScope to open the same Items page with useful filters already applied.
+
+For example, `Open in Items Page` from Location Detail can open:
+
+`/items?location=BS-A04`
+
+The same Items page is therefore reused instead of creating separate pages for different item views.
+
+### Article and Item Data
+
+StockScope should distinguish between information belonging to an Article and information belonging to an individual warehouse object.
+
+Article-level information can include:
+
+- customer article number
+- size
+- Call Off
+- relations
+- image, when available
+
+Individual H-code information can include:
+
+- location
+- level
+- status
+- active reviews
+
+This distinction should be reflected later in the StockScope data models.
 
 ---
 
