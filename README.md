@@ -871,6 +871,8 @@ The Location Detail page represents one warehouse location and should provide im
 
 The page should remain compact. The user should be able to open a location and quickly see its current state, active reviews and all items stored there without navigating through additional pages.
 
+Selecting an individual H-code opens the Item Detail modal without leaving the current Location Detail context.
+
 ### Location Overview
 
 The top of the page provides a compact overview of the location.
@@ -1043,6 +1045,118 @@ For example:
 The user should return to the same filtered and sorted Locations view instead of being returned to the default `All Locations` view.
 
 This allows Stock Control work to continue without repeatedly rebuilding the same filters.
+
+---
+
+
+## Item Detail
+
+Selecting an individual H-code opens the Item Detail in a modal.
+
+A separate Item Detail page is not required for Phase 1.
+
+The modal allows the user to inspect a specific warehouse object without leaving the current page or losing the current filters, sorting or scroll position.
+
+The same Item Detail modal can be opened from:
+
+- Location Detail
+- Items Page
+
+Closing the modal returns the user to the same context from which it was opened.
+
+### Item Information
+
+The Item Detail modal should show the most important information about the selected warehouse object.
+
+Phase 1 should include:
+
+- H-code
+- article
+- current location
+- current status
+- active item-level reviews
+- article relations
+
+The H-code represents the individual physical object, while the article represents its type.
+
+### Relations
+
+Relations are an important part of the Item Detail.
+
+When relation data is available, StockScope should show the related article or articles directly in the modal.
+
+Existing HQ data contains relation-related information such as `articleSet`. The exact relation model and available source data should be investigated during implementation.
+
+Phase 1 should focus on displaying available relation information.
+
+Advanced relation logic belongs to Phase 2 and may include:
+
+- ALL / ANY requirements
+- AND / OR combinations
+- multiple related articles
+- complete set calculations
+- missing set components
+- set availability analysis
+
+### Item Reviews
+
+Item-level reviews should be displayed directly in the Item Detail modal.
+
+Examples include:
+
+- Wrong Status
+- Unexpected / Mixed Item
+- Push Item
+
+When a review has been addressed physically, the user can use:
+
+`Mark as Handled`
+
+Handled does not mean that StockScope has verified that the problem is resolved.
+
+The review remains waiting for verification until a new warehouse report confirms whether the issue has disappeared or is still present.
+
+### Item Image
+
+An item or article image can be shown when existing image data is available.
+
+Images are useful for visual identification, but they are not required for Phase 1.
+
+The existing HQ system retrieves files through an API endpoint in the form:
+
+`/file/{fileId}`
+
+The mechanism that connects an article to its image file IDs still needs to be investigated.
+
+StockScope should prefer using existing HQ images when available rather than introducing manual image uploads.
+
+The Item Detail must remain fully usable when no image is available.
+
+---
+
+### Future Item Data Integration
+
+Future versions of StockScope should evaluate additional item information available from the existing HQ system.
+
+Potential integrations include:
+
+- Scan History
+- additional article relation data
+- existing article images
+- associated documents such as work instructions
+
+Future Scan History should provide item scan history where available, including:
+
+- scan user
+- previous scans
+- status changes
+- location movement
+
+This could help answer who scanned an item, when it was scanned, where it was previously located and what its previous status was.
+
+These additional integrations are not required for Phase 1.
+
+Phase 1 should remain functional using the Location Report as its primary data source.
 
 ---
 
