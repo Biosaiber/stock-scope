@@ -1551,35 +1551,244 @@ Locations to Review: 24 &#x20;
 
 ---
 
-## Snapshots and Trends
+## Snapshots
 
-Each Location Report import creates a warehouse snapshot.
+Each successful Location Report import can create a warehouse snapshot.
+
+A snapshot represents the warehouse state at a specific point in time.
 
 Multiple snapshots can exist during the same day.
+
+For example:
+
+08:00 → Snapshot  
+12:00 → Snapshot  
+16:00 → Snapshot
+
+All snapshots can remain stored.
 
 For simple daily trends, StockScope uses:
 
 - the latest available snapshot for the current day
-
 - the final snapshot of previous days
 
-This allows Phase 1 to provide basic trends without requiring advanced analytics.
+This allows StockScope to preserve detailed import history while keeping the Phase 1 Trends view simple.
+
+### Snapshot Data
+
+A snapshot should preserve enough information to support Phase 1 historical trends.
+
+This includes:
+
+- timestamp
+- warehouse occupancy
+- total item count
+- total active review count
+- active review counts by Review Reason
+
+Review counts should include both Location Reviews and Item Reviews.
+
+Location Reviews:
+
+- Low Occupancy
+- Nearly Full
+- Full
+- Over Capacity
+
+Item Reviews:
+
+- Wrong Status
+- Unexpected / Mixed Item
+- Push Item
+
+Historical snapshot values should not be recalculated when the current warehouse state changes.
+
+A snapshot represents what StockScope detected at that point in time.
 
 For example:
 
-29 Sep → 61% &#x20;
+Monday:
 
-30 Sep → 64% &#x20;
+`Push Items: 14`
 
-Today → 68%
+Tuesday:
 
-The same snapshot data can later support trends such as the number of Locations to Review.
+`Push Items: 9`
 
-A small trend can be displayed on the Dashboard.
+Even if some of Monday's Push Item reviews are later resolved, the Monday snapshot should still preserve the historical value of 14.
+
+---
+
+## Trends
+
+The Trends page provides a simple historical overview of how the warehouse changes over time.
+
+Phase 1 focuses on three main trends:
+
+- Warehouse Occupancy
+- Total Items
+- Reviews
+
+The goal is to provide useful operational history without turning Phase 1 into a complex analytics system.
+
+### Time Period
+
+Users should be able to change the displayed period.
+
+Initial options can include:
+
+- 7 days
+- 30 days
+- 90 days
+
+### Warehouse Occupancy
+
+Warehouse Occupancy shows how the overall warehouse occupancy changes over time.
+
+The chart uses historical snapshot data.
+
+For example:
+
+`61% → 64% → 63% → 67% → 68%`
+
+The page can also show:
+
+- current value
+- value at the beginning of the selected period
+- change over the selected period
+
+### Total Items
+
+Total Items shows how the total number of individual warehouse objects changes over time.
+
+Each concrete H-code counts as one item.
+
+For example:
+
+`4,210 → 4,238 → 4,301 → 4,276 → 4,382`
+
+This provides a simple indication of whether the physical stock in the warehouse is increasing or decreasing.
+
+### Reviews
+
+The Reviews trend shows the number of active reviews recorded in each snapshot.
+
+It includes both Location Reviews and Item Reviews.
+
+Location Reviews include:
+
+- Low Occupancy
+- Nearly Full
+- Full
+- Over Capacity
+
+Item Reviews include:
+
+- Wrong Status
+- Unexpected / Mixed Item
+- Push Item
+
+Users should be able to filter the Reviews trend by Review Reason.
+
+Multiple Review Reasons can be selected when useful.
+
+For example, selecting only `Push Item` shows the historical number of active Push Item reviews.
+
+Selecting multiple reasons shows the combined trend for the selected Review Reasons.
+
+### Handled and Resolved Reviews
+
+`Handled` and `Resolved` represent different events.
+
+`Handled` means that a user explicitly indicated that they addressed a review.
+
+`Resolved` means that the review condition no longer exists according to newer warehouse data.
+
+A review does not need to be manually marked as Handled before it can become Resolved.
+
+For example, a location can have Low Occupancy in one snapshot.
+
+No user marks the review as Handled.
+
+Later warehouse activity fills the location.
+
+The next report no longer meets the Low Occupancy condition.
+
+The review can therefore become:
+
+`Resolved by warehouse data change`
+
+The same principle applies to Item Reviews.
+
+For example, if a Push Item is present in one report but is no longer in the warehouse in the next report, its review can become Resolved automatically.
+
+The historical snapshot still preserves that the Push Item existed previously.
+
+### Review Verification
+
+A review marked as Handled should remain waiting for verification until newer warehouse data is available.
+
+The normal flow can be:
+
+`OPEN → HANDLED / WAITING FOR VERIFICATION → RESOLVED`
+
+If the condition is still present after the next import, the review can become active again.
+
+Reviews can also follow:
+
+`OPEN → RESOLVED`
+
+when the condition disappears through normal warehouse activity without a manual Handled action.
+
+This distinction allows StockScope to separate user actions from changes detected directly in warehouse data.
+
+### Wrong Status Context
+
+Wrong Status detection should not depend only on the item's status value.
+
+The item's current location and warehouse context must also be considered.
+
+For example:
+
+`AfterCleaning + Transfer to BS`
+
+should not automatically create a Wrong Status review.
+
+An item with `Transfer to BS` can already be included in the Best warehouse report while still being in the incoming transfer process.
+
+However:
+
+`AfterCleaning + real BS storage location`
+
+can create a Wrong Status review if that status is not valid for storage at that location.
+
+For example:
+
+`AfterCleaning + BS-A03 → Wrong Status`
+
+The exact valid combinations of status and location should be defined later as Review Engine business rules.
+
+### Dashboard Integration
+
+A small trend overview can be displayed on the Dashboard.
 
 Selecting `View Trends` opens the dedicated Trends page.
 
-Advanced historical analysis remains part of later development phases.
+The full Trends page provides the longer historical view and filtering options.
+
+### Future Analytics
+
+More advanced warehouse analytics are outside the Phase 1 Trends scope.
+
+Future versions can evaluate metrics such as:
+
+- frequently moved items
+- location churn
+- long-term inactive items
+- article growth
+- set trends
+- capacity trends
+- AI-assisted warehouse insights
 
 ---
 
