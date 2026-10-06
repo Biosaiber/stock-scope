@@ -1,12 +1,12 @@
 <p align="center">
 
-&#x20; <img *src*="./assets/stockscope-banner.png" *alt*="StockScope – See what matters" *width*="100%">
+ <img *src*="./assets/stockscope-banner.png" *alt*="StockScope – See what matters" *width*="100%">
 
 </p>
 
 <p align="center">
 
-&#x20; <strong>Warehouse stock visualization and analysis application.</strong>
+ <strong>Warehouse stock visualization and analysis application.</strong>
 
 </p>
 
@@ -44,9 +44,9 @@ Its purpose is to make that data easier to see, understand and use, and to help 
 
 StockScope will be developed in three main phases.
 
-****Phase 1 – Warehouse Visual**** &#x20;
+****Phase 1 – Warehouse Visual**** 
 
-****Phase 2 – Warehouse Intelligence**** &#x20;
+****Phase 2 – Warehouse Intelligence**** 
 
 ****Phase 3 – Advanced Capacity, History & AI****
 
@@ -360,11 +360,11 @@ The idea remains simple:
 
 Instead of asking:
 
->*&#x20;*****"What should I check?"****
+>******"What should I check?"****
 
 StockScope should help answer:
 
->*&#x20;*****"These are the things worth checking."****
+>******"These are the things worth checking."****
 
 ---
 
@@ -448,13 +448,13 @@ The purpose is not simply to add a chatbot.
 
 AI should use information already calculated by StockScope and provide useful suggestions such as:
 
->*&#x20;*****"6 additional complete sets can currently be created."****
+>******"6 additional complete sets can currently be created."****
 
->*&#x20;*****"BS-F08 is approaching its capacity."****
+>******"BS-F08 is approaching its capacity."****
 
->*&#x20;*****"These boxes have not moved for a long period."****
+>******"These boxes have not moved for a long period."****
 
->*&#x20;*****"These Push Items are currently available."****
+>******"These Push Items are currently available."****
 
 The normal StockScope business logic should remain deterministic.
 
@@ -626,7 +626,7 @@ The parts needed for a set do not necessarily have to be stored together.
 
 StockScope should answer:
 
->*&#x20;*****Do we currently have everything needed to make the set, and where can I find it?****
+>******Do we currently have everything needed to make the set, and where can I find it?****
 
 ---
 
@@ -714,7 +714,7 @@ Later versions should also answer:
 
 The first step is simple:
 
->*&#x20;*****Take the warehouse data we already have and turn it into information we can actually use.****
+>******Take the warehouse data we already have and turn it into information we can actually use.****
 
 ---
 
@@ -1545,7 +1545,7 @@ Resolved reviews no longer need to appear in the active Locations to Review list
 
 The Dashboard can also show a simple overview such as:
 
-Locations to Review: 24 &#x20;
+Locations to Review: 24 
 
 18 Open · 6 Handled
 
@@ -2050,29 +2050,29 @@ The navigation should remain simple and can be extended when functionality from 
 
 ## Phase 1 User Flow
 
-Import Location Report &#x20;
+Import Location Report 
 
-→ Validate and create snapshot &#x20;
+→ Validate and create snapshot 
 
-→ Dashboard &#x20;
+→ Dashboard 
 
-→ Locations to Review &#x20;
+→ Locations to Review 
 
-→ View All / Locations &#x20;
+→ View All / Locations 
 
-→ Filter locations &#x20;
+→ Filter locations 
 
-→ Location Detail &#x20;
+→ Location Detail 
 
-→ Review specific issue &#x20;
+→ Review specific issue 
 
-→ Mark as Handled &#x20;
+→ Mark as Handled 
 
-→ Import new Location Report &#x20;
+→ Import new Location Report 
 
-→ Verify review &#x20;
+→ Verify review 
 
-→ Resolved or Open Again &#x20;
+→ Resolved or Open Again 
 
 → History
 
@@ -2164,9 +2164,9 @@ For example:
 
 ****External Excel data****
 
-`Location = BS-F08` &#x20;
+`Location = BS-F08` 
 
-`Article Description = NEWAYS56` &#x20;
+`Article Description = NEWAYS56` 
 
 `Qty = 6`
 
