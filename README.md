@@ -1,7 +1,5 @@
 <p align="center">
-
- <img *src*="./assets/stockscope-banner.png" *alt*="StockScope – See what matters" *width*="100%">
-
+  <img src="./assets/stockscope-banner.png" alt="StockScope – See what matters" width="100%">
 </p>
 
 <p align="center">
