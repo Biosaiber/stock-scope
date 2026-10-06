@@ -1792,6 +1792,244 @@ Future versions can evaluate metrics such as:
 
 ---
 
+## Import Data
+
+The Import Data page allows the user to import the latest Location Report into StockScope.
+
+The import process should be simple, but it must also protect the application from incorrect or incomplete warehouse data.
+
+A technically valid Excel file can still contain unrealistic or incorrect data.
+
+For this reason, StockScope should not update the warehouse state immediately after a file is selected.
+
+The Phase 1 import flow is:
+
+`Select File → Validate → Process Preview → Compare → Confirm Import → Update Warehouse State → Reconcile Reviews → Create Snapshot → Import Complete`
+
+### Select File
+
+The user can select or drag and drop a Location Report.
+
+Phase 1 expects the existing Location Report in `.xlsx` format.
+
+The page can also display information about the latest successful import, including:
+
+- import date and time
+- number of locations
+- number of items
+
+### File Validation
+
+StockScope should validate the file before allowing an import.
+
+The initial validation should verify that:
+
+- the file can be read
+- the file is a supported Excel file
+- the expected Location Report structure exists
+- required columns are present
+
+If required data or columns are missing, the import should be blocked.
+
+For example:
+
+`Missing required column: location`
+
+In this situation, `Confirm Import` should not be available.
+
+### Import Preview
+
+A valid file should first be processed as a preview.
+
+Processing the preview must not modify the persistent StockScope state.
+
+No snapshot should be created and no existing warehouse data or reviews should be changed at this stage.
+
+The preview should show the most important values from the new report and compare them with the current warehouse state.
+
+For example:
+
+| Metric | Current | New Report | Change |
+| --- | ---: | ---: | ---: |
+| Locations | 184 | 184 | 0 |
+| Items | 4,345 | 4,382 | +37 |
+| Occupancy | 66% | 68% | +2% |
+| Reviews | 27 | 21 | -6 |
+
+This gives the user an opportunity to verify that the new report looks reasonable before it becomes part of StockScope history.
+
+### Import Warnings
+
+StockScope should detect unusually large changes when possible.
+
+For example:
+
+- extremely large decrease in item count
+- occupancy unexpectedly dropping close to zero
+- unusually large change in the number of locations
+- other major differences compared with the current warehouse state
+
+A warning means that the report is technically valid but the data change looks unusual.
+
+For example:
+
+`Item count decreased by 99.5%.`
+
+`Warehouse occupancy decreased from 66% to 0%.`
+
+The user should be asked to verify that the correct Location Report was selected.
+
+Warnings should not automatically block the import because a large warehouse change can still be legitimate.
+
+The user can still choose `Confirm Import`.
+
+### Errors and Warnings
+
+Errors and warnings represent different situations.
+
+An `Error` means that StockScope cannot reliably process the report.
+
+The import must be blocked.
+
+A `Warning` means that the report can be processed, but the resulting warehouse state looks unusual.
+
+The user can still confirm the import after reviewing the preview.
+
+### Confirm Import
+
+Only `Confirm Import` should allow the preview data to become part of the persistent StockScope state.
+
+If the user cancels the preview:
+
+- the current warehouse state remains unchanged
+- no reviews are changed
+- no snapshot is created
+- no historical trend data is affected
+
+This prevents an accidentally selected or incorrect report from contaminating warehouse history.
+
+### Update Warehouse State
+
+After confirmation, the Location Report is processed through the StockScope data adapter and converted into the internal StockScope models.
+
+The confirmed import updates the current warehouse state.
+
+This includes warehouse-derived data such as:
+
+- locations
+- items
+- statuses
+- occupancy
+- other values derived from the Location Report
+
+The import should update warehouse data without deleting StockScope-specific application data.
+
+The following StockScope data should remain persistent across imports:
+
+- Push Article configuration
+- Handled review actions
+- Last Checked information
+- Review History
+- user notes
+- historical snapshots
+
+### Review Reconciliation
+
+After the warehouse state is updated, StockScope should evaluate the Review rules against the new data.
+
+This can result in:
+
+- new reviews being detected
+- existing reviews remaining open
+- Handled reviews being verified
+- reviews becoming Resolved when their condition no longer exists
+
+A review does not need to be manually marked as Handled before it can become Resolved.
+
+For example, if a Push Item existed in the previous report but is no longer present in the new warehouse data, the review can become:
+
+`Resolved by warehouse data change`
+
+The same principle applies to Location Reviews.
+
+For example, a Low Occupancy review can become Resolved when normal warehouse activity fills the location before the next report.
+
+### Review Business Rules
+
+Review detection can depend on more than one imported value.
+
+For example, Wrong Status should consider both the item's status and its warehouse location.
+
+An item with:
+
+`AfterCleaning + Transfer to BS`
+
+should not automatically create a Wrong Status review.
+
+The item can already be included in the Best Location Report while still being part of the incoming transfer process.
+
+However:
+
+`AfterCleaning + real BS storage location`
+
+can create a Wrong Status review when that status is not valid for storage at the location.
+
+The exact combinations of valid locations and statuses should be defined later as Review Engine business rules.
+
+### Create Snapshot
+
+A new warehouse snapshot should be created only after a successful confirmed import.
+
+The snapshot preserves the warehouse state required by Phase 1 Trends.
+
+This includes values such as:
+
+- warehouse occupancy
+- total item count
+- total active review count
+- active review counts by Review Reason
+- snapshot timestamp
+
+Cancelled previews and failed imports must not create snapshots.
+
+### Import Complete
+
+After a successful import, StockScope should display a short summary.
+
+For example:
+
+`184 Locations`
+
+`4,382 Items`
+
+`21 Reviews`
+
+`68% Warehouse Occupancy`
+
+The summary can also show changes compared with the previous snapshot.
+
+For example:
+
+`Items: +37`
+
+`Reviews: -6`
+
+`Occupancy: +2%`
+
+The user can then return to the Dashboard.
+
+### Phase 1 Scope
+
+Phase 1 should focus on preventing incorrect data from entering StockScope rather than providing advanced tools for repairing warehouse history afterward.
+
+The main protection is:
+
+`Validate → Preview → Compare → Confirm`
+
+Advanced snapshot management or manual historical data repair can be evaluated in later development phases.
+
+---
+
 ## Phase 1 Navigation
 
 The initial main navigation is:
