@@ -1394,6 +1394,137 @@ This distinction should be reflected later in the StockScope data models.
 
 ---
 
+---
+
+## Push Items
+
+Push Items will not have a separate page in Phase 1.
+
+The existing Items page will be reused with a Push Items quick filter.
+
+This keeps the workflow simple and avoids duplicating item search, filtering and table functionality.
+
+### Push Items Filter
+
+The Items page should provide a quick filter for Push Items.
+
+Selecting the filter shows individual H-codes whose Article is currently defined as a Push Article.
+
+The Dashboard Push Items widget can use the same filtered Items view.
+
+Example:
+
+`/items?review=push-item`
+
+The existing Items page filters remain available while the Push Items filter is active.
+
+### Push Articles
+
+In Phase 1, Push Item configuration belongs to the Article rather than to an individual H-code.
+
+If an Article is configured as a Push Article, all individual H-codes belonging to that Article can be identified as Push Items.
+
+Example:
+
+`ICHOR06 → Push Article`
+
+All H-codes with Article `ICHOR06` can therefore appear in the Push Items view.
+
+This avoids manually configuring individual warehouse objects.
+
+### Manage Push Articles
+
+Push Articles should be managed through a modal opened from the Items page.
+
+The modal provides a simple editable list of configured Push Articles.
+
+Each entry can contain:
+
+- Article
+- expected sending day
+- note
+- last changed
+
+Users should be able to:
+
+- add a Push Article
+- edit a Push Article
+- remove a Push Article
+
+A separate Push Items management page is not required.
+
+### Expected Sending Day
+
+Expected Sending Day represents an expected day of the week rather than a specific calendar date.
+
+Examples:
+
+- Monday
+- Wednesday
+- Friday
+
+The field is optional because not every Push Article needs a regular sending day.
+
+When an expected sending day is configured, StockScope can visually highlight Push Items when the sending day is approaching.
+
+For example:
+
+- one day before → sending soon
+- expected sending day → expected today
+
+This should be a visual priority indicator rather than a separate Review Reason.
+
+The exact icon and visual styling can be decided during UI implementation.
+
+### Notes
+
+Each Push Article can optionally contain a short operational note.
+
+Examples could include destination, priority or other useful context.
+
+The note should provide operational information without turning StockScope into a planning system.
+
+### Last Changed
+
+StockScope should record when the Push Article configuration was last changed.
+
+This makes it possible to understand how current the manually maintained Push Item information is.
+
+### StockScope Business Data
+
+Push Article configuration is StockScope-managed business data.
+
+It should be stored independently from imported warehouse reports.
+
+The Location Report describes the current physical warehouse state, including which H-codes and Articles exist and where they are located.
+
+StockScope separately maintains information such as:
+
+- whether an Article is a Push Article
+- expected sending day
+- note
+- last changed
+
+Importing a new Location Report should therefore not remove the Push Article configuration.
+
+### Future Push Rules
+
+Phase 1 uses a deliberately simple rule:
+
+`Article → Push Article`
+
+Future versions can extend this using Article Relations and Set Intelligence.
+
+For example, a future Push Rule could require:
+
+`ICHOR06 AND ICHOR07 → Complete Set → Push`
+
+More advanced rules can later use the existing AND / OR relation logic.
+
+This belongs to Phase 2 Warehouse Intelligence and should not complicate the Phase 1 Push Items workflow.
+
+---
+
 ## Review History
 
 StockScope keeps review actions and results in its own application data.
