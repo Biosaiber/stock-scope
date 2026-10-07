@@ -186,16 +186,10 @@ This is especially important for locations containing tools, where several diffe
 
 A location detail should therefore be able to show multiple stock records, including:
 
-- object numbers
-
-- articles
-
-- descriptions
-
-- quantities
-
-- statuses
-
+- object / H-code
+- article
+- status
+- active reviews
 - other relevant stock information
 
 This makes it possible to move from seeing that a location has a problem to seeing exactly which objects or articles are causing it.
@@ -726,13 +720,19 @@ The goal is to define how StockScope will be used during daily Stock Control wor
 
 The Phase 1 flow starts with the Location Report.
 
-Location Report → Import → Validation → Snapshot → Dashboard
+**Location Report → Import → Validation → Preview → Compare → Confirm Import → Update Warehouse State → Reconcile Reviews → Create Snapshot → Dashboard**
 
-Each import creates a new snapshot of the warehouse data.
+The imported report is first validated and compared with the current warehouse state before it can replace the active data.
 
-StockScope keeps its own application data, such as review states and user actions, separately from the imported report.
+A new warehouse snapshot is created only after the import has been successfully confirmed.
+
+This prevents invalid or suspicious report data from automatically becoming part of the warehouse history.
+
+StockScope keeps its own application data, such as review states, review history and user actions, separately from the imported report.
 
 ---
+
+## Dashboard
 
 ## Dashboard
 
@@ -741,20 +741,17 @@ The Dashboard provides a quick overview of the current warehouse state.
 The Phase 1 Dashboard includes:
 
 - current warehouse occupancy
-
 - number of Push Items
-
 - number of Locations to Review
-
-- latest report date and time
-
+- latest successful import date and time
 - Locations to Review overview
-
 - occupancy trend
-
 - Push Items overview
-
 - quick access to import a new Location Report
+
+The Dashboard always represents the warehouse state created by the latest successfully confirmed import.
+
+If a new report is uploaded but fails validation or the import is cancelled before confirmation, the existing Dashboard data remains unchanged.
 
 The Dashboard should show only the most useful information and provide navigation to more detailed views.
 
@@ -793,6 +790,12 @@ Phase 1 review reasons:
 The exact occupancy thresholds are business rules and can be adjusted later.
 
 Each review reason should have its own visual indicator, such as a small colored dot, so different reasons can be recognized quickly.
+
+The `Locations to Review` count represents the number of unique locations with at least one active review, not the total number of individual reviews.
+
+A single location can contain multiple active reviews while still counting as one Location to Review.
+
+For example, if one location has an Over Capacity review and two item-level reviews, it still counts as one Location to Review while contributing three individual reviews to the total review count.
 
 ---
 
@@ -1143,23 +1146,15 @@ Handled does not mean that StockScope has verified that the problem is resolved.
 
 The review remains waiting for verification until a new warehouse report confirms whether the issue has disappeared or is still present.
 
-### Item Image
+### Article Image
 
-An item or article image can be shown when existing image data is available.
+An Article may optionally have an image that can be displayed when viewing an Item.
 
-Images are useful for visual identification, but they are not required for Phase 1.
+Because multiple physical Items can belong to the same Article, the image should be associated with the Article rather than with an individual H-code.
 
-The existing HQ system retrieves files through an API endpoint in the form:
+Article images are optional and are not required for Phase 1.
 
-`/file/{fileId}`
-
-The mechanism that connects an article to its image file IDs still needs to be investigated.
-
-StockScope should prefer using existing HQ images when available rather than introducing manual image uploads.
-
-The Item Detail must remain fully usable when no image is available.
-
----
+If a reliable image source becomes available later, the same Article image can be reused across all Items belonging to that Article.
 
 ### Future Item Data Integration
 
@@ -1189,25 +1184,43 @@ Phase 1 should remain functional using the Location Report as its primary data s
 
 ## Review Workflow
 
-Reviews are not automatically considered resolved when a user performs an action.
+Reviews represent specific problems detected by StockScope.
 
-A review can move through the following states:
+A review is not automatically considered resolved when a user performs an action.
 
-Open → Handled → Waiting for Verification → Resolved
+The basic review lifecycle is:
+
+**OPEN → Mark as Handled → WAITING FOR VERIFICATION → RESOLVED**
 
 A user can mark an individual review as `Handled`.
 
-This action is stored by StockScope and is not overwritten by a new Excel import.
+This means that the user has taken action on the specific problem, but StockScope still needs to verify the result using new warehouse data.
 
-The next imported snapshot verifies the review.
+The action is stored by StockScope and is not overwritten by a new Excel import.
+
+After the next successfully confirmed import, StockScope evaluates the review condition again.
 
 If the problem no longer exists:
 
-Handled → Resolved
+**WAITING FOR VERIFICATION → RESOLVED**
 
 If the problem is still detected:
 
-Handled → Open Again
+**WAITING FOR VERIFICATION → OPEN**
+
+A review can also become resolved without being manually handled.
+
+Normal warehouse activity can remove the condition that originally created the review.
+
+In this case:
+
+**OPEN → RESOLVED**
+
+For example, a Low Occupancy review may disappear because additional items were moved into the location during normal warehouse activity.
+
+A Push Item review may disappear because the item was moved out of the warehouse before anyone manually marked the review as Handled.
+
+In these situations, the review history should record that the problem was resolved by a warehouse data change rather than by a user action.
 
 Reviews belong to the specific problem, not automatically to the entire location.
 
@@ -1392,8 +1405,6 @@ This distinction should be reflected later in the StockScope data models.
 
 ---
 
----
-
 ## Push Items
 
 Push Items will not have a separate page in Phase 1.
@@ -1401,6 +1412,26 @@ Push Items will not have a separate page in Phase 1.
 The existing Items page will be reused with a Push Items quick filter.
 
 This keeps the workflow simple and avoids duplicating item search, filtering and table functionality.
+
+### Push Item Definition
+
+In Phase 1, Push Items are derived from Push Article configuration.
+
+A Push Article defines which Article should currently be treated as a Push Article.
+
+When an Item belongs to an Article configured as a Push Article, StockScope can identify that Item as a Push Item and create the corresponding Push Item review.
+
+The Push Item review is therefore derived from the Article configuration and the current warehouse data. It is not created manually for individual H-codes.
+
+The basic Phase 1 relationship is:
+
+**Push Article configuration → matching Article → matching H-code Items → Push Item reviews**
+
+Push Article configuration is StockScope-owned application data and must remain independent from imported Location Report data.
+
+A new Location Report can change which H-codes currently match a Push Article, but it must not remove or overwrite the Push Article configuration itself.
+
+In later phases, this logic can be extended with Article Relations and Set Rules without changing the basic Phase 1 model.
 
 ### Push Items Filter
 
@@ -1728,7 +1759,7 @@ A review marked as Handled should remain waiting for verification until newer wa
 
 The normal flow can be:
 
-`OPEN → HANDLED / WAITING FOR VERIFICATION → RESOLVED`
+`OPEN → Mark as Handled → WAITING FOR VERIFICATION → RESOLVED`
 
 If the condition is still present after the next import, the review can become active again.
 
@@ -1742,29 +1773,23 @@ This distinction allows StockScope to separate user actions from changes detecte
 
 ### Wrong Status Context
 
-Wrong Status detection should not depend only on the item's status value.
+A `Wrong Status` review must not be created based on the item status alone.
 
-The item's current location and warehouse context must also be considered.
+The status must be evaluated together with the item's current location and the relevant warehouse business rules.
 
 For example:
 
-`AfterCleaning + Transfer to BS`
+**Status: AfterCleaning + Location: Transfer to BS → No Wrong Status review**
 
-should not automatically create a Wrong Status review.
-
-An item with `Transfer to BS` can already be included in the Best warehouse report while still being in the incoming transfer process.
+An item in `Transfer to BS` can already be included in the BS Location Report while still being in transit and not yet physically stored in a warehouse location.
 
 However:
 
-`AfterCleaning + real BS storage location`
+**Status: AfterCleaning + Location: BS-A03 → Wrong Status review**
 
-can create a Wrong Status review if that status is not valid for storage at that location.
+Once the item has been received into a normal BS warehouse location, the same status may no longer be valid for storage.
 
-For example:
-
-`AfterCleaning + BS-A03 → Wrong Status`
-
-The exact valid combinations of status and location should be defined later as Review Engine business rules.
+The Review Engine should therefore evaluate the combination of location, status and business rules rather than treating a status as universally correct or incorrect.
 
 ### Dashboard Integration
 
@@ -2033,14 +2058,16 @@ Advanced snapshot management or manual historical data repair can be evaluated i
 The initial main navigation is:
 
 - Dashboard
-
 - Locations
-
-- Push Items
-
+- Items
 - Trends
-
 - Import Data
+
+Push Items do not require a separate main navigation entry in Phase 1.
+
+They are accessed through the Items page using the Push Item filter.
+
+For example, selecting `View All` from the Push Items section on the Dashboard opens the Items page with the Push Item filter already applied.
 
 The navigation should remain simple and can be extended when functionality from later phases is introduced.
 
@@ -2048,31 +2075,67 @@ The navigation should remain simple and can be extended when functionality from 
 
 ## Phase 1 User Flow
 
-Import Location Report 
+The Phase 1 User Flow connects the main StockScope functions into one daily workflow.
 
-→ Validate and create snapshot 
+The process starts with importing the latest Location Report.
 
-→ Dashboard 
+**Location Report → Import → Validation → Preview → Compare → Confirm Import → Update Warehouse State → Reconcile Reviews → Create Snapshot → Dashboard**
 
-→ Locations to Review 
+After a successful import, the Dashboard becomes the main starting point for working with the current warehouse state.
 
-→ View All / Locations 
+From the Dashboard, the user can continue through three main areas:
 
-→ Filter locations 
+**Dashboard → Locations**
 
-→ Location Detail 
+The Locations page provides the warehouse overview and allows the user to find locations that require attention.
 
-→ Review specific issue 
+**Locations → Location Detail → Item Detail Modal**
 
-→ Mark as Handled 
+Location Detail shows the current contents of the location, its occupancy, active reviews and history.
 
-→ Import new Location Report 
+Individual H-code items can be inspected through the Item Detail modal without leaving the Location Detail context.
 
-→ Verify review 
+**Dashboard → Items**
 
-→ Resolved or Open Again 
+The Items page provides access to individual H-code objects across the warehouse.
 
-→ History
+Items can be searched and filtered by properties such as article, location, status, review reason, size and Call Off.
+
+Selecting an item opens the same Item Detail modal used from Location Detail.
+
+Push Items are accessed through the Items page using the Push Item filter rather than through a separate page.
+
+**Dashboard → Trends**
+
+The Trends page uses historical snapshots to show basic changes in warehouse occupancy, total items and reviews over time.
+
+Reviews connect the Locations and Items workflows.
+
+StockScope detects review conditions from the current warehouse data.
+
+A user can inspect the affected location or item and mark a specific review as `Handled`.
+
+**OPEN → Mark as Handled → WAITING FOR VERIFICATION**
+
+The next successfully confirmed import evaluates the review condition again.
+
+If the problem no longer exists:
+
+**WAITING FOR VERIFICATION → RESOLVED**
+
+If the problem still exists:
+
+**WAITING FOR VERIFICATION → OPEN**
+
+A review can also be resolved directly by normal warehouse activity:
+
+**OPEN → RESOLVED**
+
+Review history remains stored by StockScope regardless of whether the problem was resolved through a user action or through a warehouse data change.
+
+The complete Phase 1 workflow can therefore be summarized as:
+
+**Import Data → Dashboard → Locations / Items / Trends → Location or Item Detail → Review Action → Next Import → Review Reconciliation → Snapshot → Updated Dashboard**
 
 ---
 
