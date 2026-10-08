@@ -4,7 +4,7 @@
 
 <p align="center">
 
- <strong>Warehouse stock visualization and analysis application.</strong>
+<strong>Warehouse stock visualization and analysis application.</strong>
 
 </p>
 
@@ -42,11 +42,11 @@ Its purpose is to make that data easier to see, understand and use, and to help 
 
 StockScope will be developed in three main phases.
 
-****Phase 1 – Warehouse Visual**** 
+**Phase 1 – Warehouse Visual**
 
-****Phase 2 – Warehouse Intelligence**** 
+**Phase 2 – Warehouse Intelligence**
 
-****Phase 3 – Advanced Capacity, History & AI****
+**Phase 3 – Advanced Capacity, History & AI**
 
 Each phase should produce something useful on its own.
 
@@ -68,7 +68,7 @@ The first version can use the existing Location Report.
 
 Data flow:
 
-****Location Report → Excel Import → Data Adapter → StockScope Models → Application****
+**Location Report → Excel Import → Data Adapter → StockScope Models → Application**
 
 StockScope should work with its own internal models.
 
@@ -76,7 +76,7 @@ If API access becomes available later, Excel can be replaced by an API adapter w
 
 Future flow:
 
-****HQ API → API Adapter → StockScope Models → Application****
+**HQ API → API Adapter → StockScope Models → Application**
 
 ---
 
@@ -108,73 +108,93 @@ Possible information to preserve includes:
 
 Starting this early prevents useful historical information from being lost before the historical analysis features are developed.
 
+##### Historical Data Strategy
+
+Each successfully confirmed Location Report import should preserve historical information at three levels:
+
+1. Warehouse Snapshot Summary
+2. Location Snapshots
+3. Historical Import Data
+
+The Warehouse Snapshot Summary contains:
+
+- import timestamp
+- overall warehouse occupancy
+- total number of Items
+- total number of active Reviews
+- active Review counts by Review Reason
+
+Location Snapshots preserve historical information for individual warehouse locations, including:
+
+- location code
+- occupancy
+- item count
+- active Review count
+
+Historical Import Data preserves the warehouse records associated with the confirmed import, including Item H-codes, Articles, locations, levels and statuses.
+
+The original confirmed Excel report should also be archived when technically and operationally permitted.
+
+Historical records must remain independent from the current warehouse state and must not be overwritten by later imports.
+
+All historical records created by one import should be associated with the same confirmed import.
+
+Phase 1 uses Warehouse Snapshot Summaries and Location Snapshots for basic historical trends.
+
+Detailed Item movement analysis, location turnover and advanced historical comparisons belong to later phases.
+
+Failed, cancelled or unconfirmed imports must not create historical records.
+
 ---
 
 #### Warehouse Overview
 
-The main screen should visually show warehouse locations and useful information such as:
+The Locations page provides a unified overview of warehouse locations.
 
-- current number of objects
+In Phase 1, the Locations page uses a table-based List View.
 
-- maximum configured capacity
+The List View allows users to:
 
-- occupancy percentage
+- search for locations
+- filter locations by review reasons
+- filter by occupancy range
+- sort locations
+- identify locations requiring attention
+- open Location Detail
 
-- available capacity
+The Locations page also supports predefined filters when opened from the Dashboard or other application areas.
 
-- status warnings
+#### Future Visualization Modes
 
-- Push Items
+In later phases, the Locations page can support multiple visualization modes:
 
-- other conditions requiring attention
+- List View
+- Compact View
+- Map View
 
-Example:
+**List View**
 
-****BS-F08 | 302 / 356 | 84.8%****
+The standard table-based overview of warehouse locations introduced in Phase 1.
 
-Selecting a location should open its details.
+**Compact View**
 
----
+A compact visual representation where locations are displayed as regularly arranged blocks.
 
-#### Warehouse Views
+Each block represents a warehouse location and can use colors or indicators to communicate occupancy, reviews and other important conditions.
 
-The Warehouse Overview should support two ways of looking at the same warehouse data.
+**Map View**
 
-##### Compact View
+A visual representation based on the actual physical warehouse layout.
 
-The Compact View should provide a structured overview of all warehouse locations.
+Locations are positioned according to the warehouse map, allowing users to understand their physical arrangement and identify areas requiring attention.
 
-Locations can be displayed as regular visual blocks or columns showing the most important information at a glance, such as:
+All visualization modes should use the same underlying location data, filtering logic and review information.
 
-- location code
+Switching between views should not require separate location management systems.
 
-- occupancy
+Selecting a location from any visualization mode should open the same Location Detail.
 
-- available capacity
-
-- status warnings
-
-- Push Items
-
-- other conditions requiring attention
-
-The purpose of this view is to quickly understand the current state of the warehouse without depending on the physical warehouse layout.
-
-##### Map View
-
-The Map View should represent locations using the real warehouse layout.
-
-It should use the same StockScope data as the Compact View, but show locations in their approximate physical positions inside the warehouse.
-
-This view should make it easier to understand where stock, warnings or available capacity are physically located.
-
-Both views should lead to the same Location Detail.
-
-Search and filters should work across both views.
-
-The Compact View can be developed first because it does not depend on having a final warehouse layout.
-
-The Map View can be added when the warehouse layout and location positions are sufficiently stable.
+Compact View and Map View are future enhancements and are not required for Phase 1.
 
 ---
 
@@ -202,13 +222,19 @@ Until reliable location dimensions are available, maximum capacity can be config
 
 For example:
 
-****BS-F08 → Maximum 356****
+**BS-F08 → Maximum 356**
 
 If 302 objects are currently stored there, StockScope can calculate:
 
-****302 / 356 → 84.8% occupied → 54 available****
+**302 / 356 → 84.8% occupied → 54 available**
 
 The data model can already contain dimensions for future use even if they are not yet used in the calculation.
+
+If a location does not have a reliable configured capacity, its occupancy should be displayed as unavailable rather than assumed to be 0%.
+
+Capacity-based Reviews must not be generated for locations without a valid capacity.
+
+These locations should remain visible in StockScope and can still contain Items and Item Reviews.
 
 ---
 
@@ -226,33 +252,31 @@ The purpose is to make exceptions easy to notice without filling the overview wi
 
 #### Push Items
 
-StockScope should support at least:
+Push Items are identified through StockScope-owned Push Article configuration.
 
-- Push Item Outbound
+In Phase 1, the user manages a list of Articles that should be treated as Push Articles.
 
-- Push Item ASML
+Each Push Article configuration contains:
 
-For each Push Item it should be possible to see:
+- Article
+- Push workflow type (ASML or Outbound)
+- Expected sending day (optional, day of the week)
+- Note (optional)
+- Last changed date (automatic)
 
-- item
+StockScope uses the current warehouse data to find individual H-code Items belonging to these Articles.
 
-- quantity
+Matching Items are evaluated against their configured Push workflow rules and receive an active Push Item Review only when further action is required.
 
-- location
+Push Item reviews are derived automatically and are not manually assigned to individual H-codes.
 
-- relevant status
+Push Articles can be managed through a modal on the Items page. Push Items are displayed using the Items page with a predefined filter, rather than a separate Push Items page.
 
-- planned or expected sending day, when applicable
+The Push Article configuration is stored independently from imported Location Report data and must be preserved during future imports.
 
-- note
+The expected sending day provides operational context and may influence the visual priority of Push Items. It does not create an additional Review Reason or turn StockScope into a planning system.
 
-- last modification
-
-For example:
-
-****NEWAYS56 | 6 pcs | BS-F08 | Thursday | Prepared for outbound****
-
-The note or planned day provides useful operational context without turning StockScope into a planning system.
+In Phase 2, Push Item detection can be extended using Article Relations and Set Rules, including combinations of Articles required to form complete sets.
 
 ---
 
@@ -290,11 +314,11 @@ StockScope should understand which boxes and tools create a complete set.
 
 Relations need to support:
 
-- ****ALL**** – every defined item is required
+- **ALL** – every defined item is required
 
-- ****ANY**** – one item from a group is sufficient
+- **ANY** – one item from a group is sufficient
 
-- ****ALL + ANY**** – mandatory items and alternative groups can exist together
+- **ALL + ANY** – mandatory items and alternative groups can exist together
 
 StockScope should calculate how many complete sets are currently available and show where their components are located.
 
@@ -308,7 +332,7 @@ The warehouse data does not always tell us which specific tool is physically pai
 
 For example:
 
-****10 boxes + 5 compatible tools = 5 possible complete sets****
+**10 boxes + 5 compatible tools = 5 possible complete sets**
 
 StockScope therefore needs to support calculations based on quantities, not only direct object-to-object relationships.
 
@@ -318,7 +342,7 @@ StockScope therefore needs to support calculations based on quantities, not only
 
 StockScope should compare:
 
-****Empty Boxes + Loose Tools + Set Definitions → Possible New Sets****
+**Empty Boxes + Loose Tools + Set Definitions → Possible New Sets**
 
 The user should be able to see:
 
@@ -352,11 +376,11 @@ The idea remains simple:
 
 Instead of asking:
 
->******"What should I check?"****
+> **"What should I check?"**
 
 StockScope should help answer:
 
->******"These are the things worth checking."****
+> **"These are the things worth checking."**
 
 ---
 
@@ -432,6 +456,40 @@ Phase 3 should focus on deeper historical analysis, trends and patterns rather t
 
 ---
 
+#### Scan History and Activity Analysis
+
+Future versions of StockScope should support importing Scan Report data from the existing warehouse system.
+
+Scan Report data can provide individual scan events, including:
+
+- Item H-code
+- scan date and time
+- scan user
+- recorded location
+- recorded status
+- Article
+- department
+- related Article information, when available
+
+This data should be stored separately from warehouse snapshots and linked to Items using their H-codes.
+
+Future functionality may include:
+
+- individual Item Scan History
+- chronological scan timelines
+- recorded location and status changes
+- scan activity statistics by user and time period
+- automatic detection of suspicious scan patterns
+- identification of potential workflow or data inconsistencies
+
+Scan activity statistics should provide operational insight rather than automatically measuring individual employee performance.
+
+Scan Reports may not represent every physical movement or guarantee that every recorded scan completed successfully.
+
+Phase 1 does not require Scan Report integration.
+
+Scan History and activity analysis are future enhancements that should be considered when designing the StockScope data models and persistence architecture.
+
 #### AI Suggester
 
 AI should be added only after StockScope has reliable data and analytics.
@@ -440,13 +498,13 @@ The purpose is not simply to add a chatbot.
 
 AI should use information already calculated by StockScope and provide useful suggestions such as:
 
->******"6 additional complete sets can currently be created."****
+> **"6 additional complete sets can currently be created."**
 
->******"BS-F08 is approaching its capacity."****
+> **"BS-F08 is approaching its capacity."**
 
->******"These boxes have not moved for a long period."****
+> **"These boxes have not moved for a long period."**
 
->******"These Push Items are currently available."****
+> **"These Push Items are currently available."**
 
 The normal StockScope business logic should remain deterministic.
 
@@ -484,11 +542,11 @@ After scanning an object, the scanner should immediately show:
 
 The basic principle would be:
 
-****SCAN → SEE INFORMATION → ACT****
+**SCAN → SEE INFORMATION → ACT**
 
 For a common location change:
 
-****Scan Object → Show Info + Suggested Location → Scan Actual Location → Confirmation → Enter → Ready for Next Scan****
+**Scan Object → Show Info + Suggested Location → Scan Actual Location → Confirmation → Enter → Ready for Next Scan**
 
 The suggested location is only guidance.
 
@@ -556,31 +614,31 @@ The goal is to have a practical way to evaluate whether StockScope actually make
 
 The development of StockScope follows eleven architectural steps:
 
-1. ****Business Analysis****
+1. **Business Analysis**
 
-2. ****User Flow****
+2. **User Flow**
 
-3. ****Data Models****
+3. **Data Models**
 
-4. ****Services & State****
+4. **Services & State**
 
-5. ****Components****
+5. **Components**
 
-6. ****Routing****
+6. **Routing**
 
-7. ****Implementation****
+7. **Implementation**
 
-8. ****Validation****
+8. **Validation**
 
-9. ****Testing****
+9. **Testing**
 
-10. ****Data Flow Check****
+10. **Data Flow Check**
 
-11. ****Deployment & Production****
+11. **Deployment & Production**
 
-The three phases describe ****what StockScope will gradually become****.
+The three phases describe **what StockScope will gradually become**.
 
-The eleven architecture steps describe ****how it will be designed and built****.
+The eleven architecture steps describe **how it will be designed and built**.
 
 ---
 
@@ -618,7 +676,7 @@ The parts needed for a set do not necessarily have to be stored together.
 
 StockScope should answer:
 
->******Do we currently have everything needed to make the set, and where can I find it?****
+> **Do we currently have everything needed to make the set, and where can I find it?**
 
 ---
 
@@ -682,31 +740,32 @@ Later versions can add more intelligent checks based on relationships between bo
 
 The first version of StockScope should answer simple practical questions:
 
-- ****What do we have?****
-
-- ****Where is it?****
-
-- ****What is inside this location?****
-
-- ****How full is this location?****
-
-- ****Is something here requiring attention?****
-
-- ****Which Push Items are available?****
+- **What do we have?**
+- **Where is it?**
+- **What is inside this location?**
+- **How full is this location?**
+- **Is something here requiring attention?**
+- **Which Push Items are available?**
+- **How is overall warehouse occupancy changing over time?**
+- **Is the total number of Items increasing or decreasing?**
+- **How is the number of active Reviews changing over time?**
 
 Later versions should also answer:
 
-- ****How many complete sets do we have?****
+- **How many complete sets do we have?**
+- **Can we create additional sets?**
+- **Where are the required components?**
+- **Which Items are frequently moved?**
+- **Which locations have high turnover?**
+- **Which Items have remained inactive for a long time?**
 
-- ****Can we create additional sets?****
+Phase 1 introduces basic historical trends using snapshots created after successfully confirmed Location Report imports.
 
-- ****Where are the required components?****
-
-- ****How is the warehouse changing over time?****
+More advanced historical analysis, including individual Item movements and long-term warehouse patterns, belongs to later phases.
 
 The first step is simple:
 
->******Take the warehouse data we already have and turn it into information we can actually use.****
+> **Take the warehouse data we already have and turn it into information we can actually use.**
 
 ---
 
@@ -731,8 +790,6 @@ This prevents invalid or suspicious report data from automatically becoming part
 StockScope keeps its own application data, such as review states, review history and user actions, separately from the imported report.
 
 ---
-
-## Dashboard
 
 ## Dashboard
 
@@ -771,21 +828,20 @@ Phase 1 review reasons:
 
 ### Location-level
 
-- ****Low Occupancy**** – for example ≤ 15%
+- **Low Occupancy** – occupancy ≤ 15%
+- **Nearly Full** – occupancy ≥ 90% and < 100%
+- **Full** – occupancy = 100%
+- **Over Capacity** – occupancy > 100%
 
-- ****Nearly Full**** – for example ≥ 90%
-
-- ****Full**** – 100%
-
-- ****Over Capacity**** – above 100%
+Capacity-related Review Reasons are mutually exclusive. A location should not receive multiple capacity Reviews for the same occupancy value.
 
 ### Item-level
 
-- ****Wrong Status**** – an item has a status that does not match the expected storage status
+- **Wrong Status** – an item has a status that does not match the expected storage status
 
-- ****Unexpected / Mixed Item**** – an item does not match the expected content or rules of the location
+- **Unexpected / Mixed Item** – an item does not match the expected content or rules of the location
 
-- ****Push Item**** – an item that should not remain stored and should be moved further in the process
+- **Push Item** – an item that should not remain stored and should be moved further in the process
 
 The exact occupancy thresholds are business rules and can be adjusted later.
 
@@ -796,6 +852,35 @@ The `Locations to Review` count represents the number of unique locations with a
 A single location can contain multiple active reviews while still counting as one Location to Review.
 
 For example, if one location has an Over Capacity review and two item-level reviews, it still counts as one Location to Review while contributing three individual reviews to the total review count.
+
+### Location Reviews vs. Item Reviews
+
+Location Reviews describe conditions affecting the location as a whole.
+
+Examples include:
+
+- Low Occupancy
+- Nearly Full
+- Full
+- Over Capacity
+
+Item Reviews describe conditions affecting individual H-code Items.
+
+Examples include:
+
+- Wrong Status
+- Unexpected / Mixed Item
+- Push Item
+
+An Item Review does not automatically create a separate Location Review.
+
+However, a location containing one or more Items with active Reviews should still appear in Locations to Review.
+
+Location Detail displays Location Reviews separately from Item Reviews.
+
+The total active Review count for a location includes both types, without duplicating individual Review records.
+
+This allows StockScope to identify locations requiring attention while preserving the distinction between location-level and item-level problems.
 
 ---
 
@@ -868,11 +953,22 @@ Future versions should also evaluate whether users should be able to manually ad
 
 ## Location Detail
 
-The Location Detail page represents one warehouse location and should provide immediate access to the information needed during Stock Control work.
+A Location Detail should display:
 
-The page should remain compact. The user should be able to open a location and quickly see its current state, active reviews and all items stored there without navigating through additional pages.
+- location code
+- current occupancy
+- total number of Items
+- active location-level reviews
+- individual Items identified by their H-code
+- Article associated with each Item
+- current Item status
+- active item-level reviews
+- last physical check
+- relevant location history
 
-Selecting an individual H-code opens the Item Detail modal without leaving the current Location Detail context.
+Location-level reviews should be displayed near the location overview, while item-level reviews should be displayed next to the affected Items.
+
+Each Item can be opened in the Item Detail modal without leaving the Location Detail context.
 
 ### Location Overview
 
@@ -929,11 +1025,11 @@ Each item row should include:
 
 For example:
 
-| ID | Article | Status | Review |
-| --- | --- | --- | --- |
-| H145784 | FRENCKEN07 | Storage | — |
-| H145785 | FRENCKEN07 | Storage | Push Item |
-| H145786 | NEWAYS56 | Cleaning | Wrong Status |
+| ID      | Article    | Status   | Review       |
+| ------- | ---------- | -------- | ------------ |
+| H145784 | FRENCKEN07 | Storage  | —            |
+| H145785 | FRENCKEN07 | Storage  | Push Item    |
+| H145786 | NEWAYS56   | Cleaning | Wrong Status |
 
 Item-level reviews such as `Wrong Status`, `Unexpected / Mixed Item` and `Push Item` are therefore shown directly in the context of the affected item.
 
@@ -1049,7 +1145,6 @@ This allows Stock Control work to continue without repeatedly rebuilding the sam
 
 ---
 
-
 ## Item Detail
 
 Selecting an individual H-code opens the Item Detail in a modal.
@@ -1117,9 +1212,15 @@ When relation data is available, StockScope should show the related article or a
 
 Existing HQ data contains relation-related information such as `articleSet`. The exact relation model and available source data should be investigated during implementation.
 
-Phase 1 should focus on displaying available relation information.
+In Phase 1, Article Relations should be displayed only when reliable relation data is available from an existing data source.
 
-Advanced relation logic belongs to Phase 2 and may include:
+The Location Report alone may not provide enough information to identify these relationships.
+
+If relation data is unavailable, the Relations section should remain hidden rather than displaying incomplete or assumed relationships.
+
+Advanced relation logic and complete set calculations belong to Phase 2.
+
+Phase 2 should extend Article Relations with:
 
 - ALL / ANY requirements
 - AND / OR combinations
@@ -1225,6 +1326,82 @@ In these situations, the review history should record that the problem was resol
 Reviews belong to the specific problem, not automatically to the entire location.
 
 This allows one location to contain several independent reviews with different states.
+
+### Push Item Verification
+
+Push Item Reviews should be resolved according to the warehouse workflow associated with the Push Article.
+
+Different Push Article types may have different completion conditions.
+
+**ASML Push Items**
+
+The expected completion workflow for ASML Push Items is:
+
+- Status: Transfer to ASML
+- Location: EXTERN-NL-EIN-01
+
+However, Items transferred to this external location are not visible in the currently available Location Report or Scan Report.
+
+StockScope therefore cannot directly verify the final transfer status or destination using these reports.
+
+When an ASML Push Item is no longer present in the monitored warehouse data after a successfully confirmed import, its active Push Item Review can become RESOLVED.
+
+The resolution reason should indicate that the Item is no longer present in the monitored warehouse, rather than claiming that the transfer to ASML was directly verified.
+
+An Item may later return from ASML and appear in the warehouse again.
+
+If the returning Item still matches the active Push Article configuration and requires attention, StockScope should create a new active Push Item Review while preserving the previous Review History.
+
+**Outbound Push Items**
+
+An Outbound Push Item is considered completed when its location becomes:
+
+- Location: Transfer to lbOutbound
+- Status: Any
+
+The location is the relevant completion condition for this workflow.
+
+A location such as `Transferred to LB Outbound` is part of the normal warehouse workflow and must not automatically generate a Review.
+
+For an Item that is not configured as an Outbound Push Item, this location does not represent an error.
+
+For an Outbound Push Item, reaching the configured outbound transfer location is considered a completion condition.
+
+Review detection must consider the Item's Article, configured Push workflow type, current location and relevant business rules.
+
+**Review Lifecycle**
+
+Mark as Handled records a user action but does not automatically resolve the Push Item Review.
+
+StockScope evaluates the configured completion rules after each successfully confirmed import.
+
+When the completion condition is confirmed, the Review becomes RESOLVED.
+
+When the Item remains in the warehouse without meeting its completion condition, the Review remains active or returns to OPEN after verification.
+
+Push Article configuration should support different workflow types and completion rules.
+
+More advanced Push Rules based on Article Relations and complete sets remain part of Phase 2.
+
+### Wrong Status Context
+
+A `Wrong Status` review must not be created based on the item status alone.
+
+The status must be evaluated together with the item's current location and the relevant warehouse business rules.
+
+For example:
+
+**Status: AfterCleaning + Location: Transfer to BS → No Wrong Status review**
+
+An item in `Transfer to BS` can already be included in the BS Location Report while still being in transit and not yet physically stored in a warehouse location.
+
+However:
+
+**Status: AfterCleaning + Location: BS-A03 → Wrong Status review**
+
+Once the item has been received into a normal BS warehouse location, the same status may no longer be valid for storage.
+
+The Review Engine should therefore evaluate the combination of location, status and business rules rather than treating a status as universally correct or incorrect.
 
 ---
 
@@ -1415,31 +1592,38 @@ This keeps the workflow simple and avoids duplicating item search, filtering and
 
 ### Push Item Definition
 
-In Phase 1, Push Items are derived from Push Article configuration.
+In Phase 1, Push Items are identified using StockScope-owned Push Article configuration.
 
-A Push Article defines which Article should currently be treated as a Push Article.
+Each Push Article defines:
 
-When an Item belongs to an Article configured as a Push Article, StockScope can identify that Item as a Push Item and create the corresponding Push Item review.
+- Article
+- Push workflow type (ASML or Outbound)
+- optional expected sending day
+- optional note
 
-The Push Item review is therefore derived from the Article configuration and the current warehouse data. It is not created manually for individual H-codes.
+StockScope identifies H-code Items belonging to configured Push Articles and evaluates their current warehouse state against the corresponding workflow rules.
 
-The basic Phase 1 relationship is:
+An Item receives an active Push Item Review only when it still requires attention according to its configured workflow.
 
-**Push Article configuration → matching Article → matching H-code Items → Push Item reviews**
+An Outbound Push Item that has reached its configured transfer location should not remain an active Push Item Review.
 
-Push Article configuration is StockScope-owned application data and must remain independent from imported Location Report data.
+An ASML Push Item that disappears from the monitored warehouse data can have its Review resolved with the reason that it is no longer present in the monitored warehouse.
 
-A new Location Report can change which H-codes currently match a Push Article, but it must not remove or overwrite the Push Article configuration itself.
+This does not prove that its final transfer to ASML was directly verified.
 
-In later phases, this logic can be extended with Article Relations and Set Rules without changing the basic Phase 1 model.
+Push Article configuration remains independent from imported Location Report data and must be preserved during future imports.
+
+Future Push Rules can use Article Relations and Set Intelligence in Phase 2.
 
 ### Push Items Filter
 
-The Items page should provide a quick filter for Push Items.
+The Items page should provide a quick filter for active Push Item Reviews.
 
-Selecting the filter shows individual H-codes whose Article is currently defined as a Push Article.
+Selecting this filter shows individual H-code Items that currently require attention according to their configured Push workflow.
 
-The Dashboard Push Items widget can use the same filtered Items view.
+Items whose Push Item Reviews have already been resolved are not included in the active Push Items filter.
+
+The Dashboard Push Items count and View All action should use the same active Push Item Review definition.
 
 Example:
 
@@ -1470,6 +1654,7 @@ The modal provides a simple editable list of configured Push Articles.
 Each entry can contain:
 
 - Article
+- Push workflow type (ASML or Outbound)
 - expected sending day
 - note
 - last changed
@@ -1530,6 +1715,7 @@ The Location Report describes the current physical warehouse state, including wh
 StockScope separately maintains information such as:
 
 - whether an Article is a Push Article
+- Push workflow type (ASML or Outbound)
 - expected sending day
 - note
 - last changed
@@ -1571,12 +1757,6 @@ A simple history can record events such as:
 - detected again
 
 Resolved reviews no longer need to appear in the active Locations to Review list but remain available in history.
-
-The Dashboard can also show a simple overview such as:
-
-Locations to Review: 24 
-
-18 Open · 6 Handled
 
 ---
 
@@ -1771,26 +1951,6 @@ when the condition disappears through normal warehouse activity without a manual
 
 This distinction allows StockScope to separate user actions from changes detected directly in warehouse data.
 
-### Wrong Status Context
-
-A `Wrong Status` review must not be created based on the item status alone.
-
-The status must be evaluated together with the item's current location and the relevant warehouse business rules.
-
-For example:
-
-**Status: AfterCleaning + Location: Transfer to BS → No Wrong Status review**
-
-An item in `Transfer to BS` can already be included in the BS Location Report while still being in transit and not yet physically stored in a warehouse location.
-
-However:
-
-**Status: AfterCleaning + Location: BS-A03 → Wrong Status review**
-
-Once the item has been received into a normal BS warehouse location, the same status may no longer be valid for storage.
-
-The Review Engine should therefore evaluate the combination of location, status and business rules rather than treating a status as universally correct or incorrect.
-
 ### Dashboard Integration
 
 A small trend overview can be displayed on the Dashboard.
@@ -1872,12 +2032,12 @@ The preview should show the most important values from the new report and compar
 
 For example:
 
-| Metric | Current | New Report | Change |
-| --- | ---: | ---: | ---: |
-| Locations | 184 | 184 | 0 |
-| Items | 4,345 | 4,382 | +37 |
-| Occupancy | 66% | 68% | +2% |
-| Reviews | 27 | 21 | -6 |
+| Metric    | Current | New Report | Change |
+| --------- | ------: | ---------: | -----: |
+| Locations |     184 |        184 |      0 |
+| Items     |   4,345 |      4,382 |    +37 |
+| Occupancy |     66% |        68% |    +2% |
+| Reviews   |      27 |         21 |     -6 |
 
 This gives the user an opportunity to verify that the new report looks reasonable before it becomes part of StockScope history.
 
@@ -1931,6 +2091,14 @@ If the user cancels the preview:
 
 This prevents an accidentally selected or incorrect report from contaminating warehouse history.
 
+A confirmed import must be processed as one consistent operation.
+
+Updating the warehouse state, reconciling Reviews and saving historical records must either complete successfully together or leave the previously confirmed state unchanged.
+
+A partially completed import must not become the active warehouse state.
+
+Repeated imports of the same report should be detected to prevent accidental duplicate historical records.
+
 ### Update Warehouse State
 
 After confirmation, the Location Report is processed through the StockScope data adapter and converted into the internal StockScope models.
@@ -1976,6 +2144,20 @@ For example, if a Push Item existed in the previous report but is no longer pres
 The same principle applies to Location Reviews.
 
 For example, a Low Occupancy review can become Resolved when normal warehouse activity fills the location before the next report.
+
+### Missing Item Verification
+
+An Item missing from a new Location Report must not automatically be considered transferred or resolved unless the report is confirmed to cover the expected warehouse scope.
+
+StockScope should distinguish between:
+
+- an Item no longer present in a complete warehouse report
+- an Item missing because the imported report covers only part of the warehouse
+
+If report coverage cannot be verified, missing Items should not automatically trigger final Push Item resolution.
+
+The import preview should warn users when report coverage appears incomplete or inconsistent with previous imports.
+
 
 ### Review Business Rules
 
@@ -2217,17 +2399,17 @@ StockScope should not make the whole application depend directly on that structu
 
 Instead:
 
-****Location Report → Excel Import → Data Adapter → StockScope Models → Application****
+**Location Report → Excel Import → Data Adapter → StockScope Models → Application**
 
 The Data Adapter reads the imported warehouse data and translates it into the internal structure expected by StockScope.
 
 For example:
 
-****External Excel data****
+**External Excel data**
 
-`Location = BS-F08` 
+`Location = BS-F08`
 
-`Article Description = NEWAYS56` 
+`Article Description = NEWAYS56`
 
 `Qty = 6`
 
@@ -2245,7 +2427,7 @@ The difference is the source of the data.
 
 Instead of receiving data from an imported Excel report:
 
-****HQ API → API Adapter → StockScope Models → Application****
+**HQ API → API Adapter → StockScope Models → Application**
 
 The API Adapter translates the data returned by the API into the same StockScope models.
 
@@ -2253,11 +2435,11 @@ This means the main application does not need to care whether the data originall
 
 Today:
 
-****Excel → Data Adapter → StockScope****
+**Excel → Data Adapter → StockScope**
 
 Later:
 
-****API → API Adapter → StockScope****
+**API → API Adapter → StockScope**
 
 The source changes.
 
