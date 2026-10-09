@@ -1229,6 +1229,74 @@ Phase 2 should extend Article Relations with:
 - missing set components
 - set availability analysis
 
+
+### Item Notes
+
+StockScope should allow users to add a simple note to an individual Item.
+
+Notes provide operational context that is not available in the original warehouse report.
+
+For example, an Item may have the status `On hold`.
+
+After checking with a supervisor, the user learns that the Item is waiting for a response from customer ZEISS.
+
+The user can add a note:
+
+> Waiting for customer ZEISS response. Confirmed with supervisor.
+
+The original Item status remains unchanged.
+
+#### Note Management
+
+Each Item should support one editable note in Phase 1.
+
+The Item Detail Modal should allow the user to:
+
+- view the current note
+- add a note
+- edit an existing note
+- clear a note when it is no longer relevant
+
+StockScope should store:
+
+- Item H-code
+- note text
+- last modified date and time
+
+The note belongs to the individual H-code Item, not to the Article.
+
+#### Data Persistence
+
+Item Notes are StockScope-owned data.
+
+They must remain available after importing a new Location Report.
+
+An Excel import must not overwrite or delete existing Item Notes.
+
+If an Item temporarily disappears from the Location Report, its note should remain stored.
+
+If the same H-code appears again in a later report, the existing note should still be available.
+
+#### Relationship to Reviews
+
+Item Notes are independent of the Review Workflow.
+
+Adding, editing or clearing a note must not:
+
+- change the original warehouse status
+- create a Review
+- mark a Review as Handled
+- resolve an existing Review
+
+An Item may have an Attention indicator and an Item Note without having an active Review.
+
+#### Phase 1 Scope
+
+Phase 1 should keep Item Notes simple.
+
+Advanced features such as multiple notes, comments, case management, attachments and note history are not required.
+
+
 ### Item Reviews
 
 Item-level reviews should be displayed directly in the Item Detail modal.
@@ -1283,6 +1351,118 @@ Phase 1 should remain functional using the Location Report as its primary data s
 
 ---
 
+
+## Item Status Classification
+
+StockScope uses the original Item status values from the existing warehouse management system.
+
+The application does not modify these statuses. Instead, it interprets them to provide clearer visual information and help Stock Control identify Items that may require attention.
+
+Status Classification and Review Detection are separate concepts.
+
+A status may receive a visual indicator without automatically creating a Review.
+
+### Regular Storage Statuses
+
+Three important storage statuses should be visually distinguishable.
+
+- `Storage` – Blue. Regular healthy storage after Grade 5 cleaning.
+- `Storage - Cleanroom clean` – Pink. Healthy storage after Grade 4 cleaning. These boxes use pink protective wrapping.
+- `RTM- New Build` – Red. Healthy storage status identifying an Item with a special version.
+
+All three represent valid storage conditions.
+
+Their colors identify different storage types and must not automatically indicate a problem.
+
+### Other Warehouse Statuses
+
+StockScope should recognize the following additional statuses:
+
+- Cleanroom Cleaning
+- Industrial Cleaning
+- Industrially cleaned
+- Inspected - Waiting for Tech Repair Parts
+- Intern repair CE
+- On hold
+- Pending PE
+- Ready for Cleanroom Cleaning
+- Ready for Industrial Cleaning
+- Ready for Inspection at Tech Repair
+- Ready for Repair
+- Ready for Storage
+- Ready for Transport
+- Scrapped
+- Stock Correction
+- Storage - Reserved for ASML Factory
+- Tech Repairing
+- Transported to ASML
+- Transported to customer
+- Waiting for Parts
+
+These statuses may describe cleaning, repair, inspection, preparation, reservation, transport or exceptional warehouse conditions.
+
+Their presence does not automatically mean that an Item has an incorrect status.
+
+### Attention Indicators
+
+Some statuses may deserve additional attention during Stock Control.
+
+Examples include:
+
+- `On hold`
+- `Pending PE`
+- `Waiting for Parts`
+
+StockScope should display an orange `Attention` indicator for statuses configured as requiring explanation or investigation.
+
+An Attention indicator is not a Review.
+
+It does not automatically create a Wrong Status Review or increase the Locations to Review count.
+
+For example, an Item with status `On hold` may be correctly stored while waiting for a customer response.
+
+The user can open Item Detail, investigate the situation and add a note without changing the original status.
+
+### Wrong Status Detection
+
+A Wrong Status Review should only be created when a defined business rule identifies an invalid combination of Item status, location and warehouse context.
+
+A status must not be classified as wrong solely because it is uncommon.
+
+For example, `Ready for Repair` may be appropriate for a damaged empty box being sent for repair.
+
+Similarly, `Ready for Inspection at Tech Repair` may be appropriate for a damaged tool or a box containing a damaged tool.
+
+The exact valid and invalid status-location combinations should be defined as Review Engine business rules.
+
+Until a rule is defined, StockScope should avoid automatically creating a Wrong Status Review based on that status alone.
+
+### Status Display
+
+Status colors and Attention indicators should be available consistently in:
+
+- Items Page
+- Location Detail
+- Item Detail Modal
+
+The original status text should always remain visible.
+
+Status colors must not be the only way to communicate meaning. Text labels or icons should also distinguish special storage conditions and Attention indicators.
+
+### Phase 1 Scope
+
+Phase 1 should provide:
+
+- recognition of known warehouse statuses
+- visual distinction between regular storage types
+- configurable classification of statuses requiring attention
+- context-based Wrong Status Review detection
+- consistent status display across the application
+
+StockScope should remain an additional information layer and must not change the original warehouse status.
+
+---
+
 ## Review Workflow
 
 Reviews represent specific problems detected by StockScope.
@@ -1327,81 +1507,133 @@ Reviews belong to the specific problem, not automatically to the entire location
 
 This allows one location to contain several independent reviews with different states.
 
+
 ### Push Item Verification
 
-Push Item Reviews should be resolved according to the warehouse workflow associated with the Push Article.
+Push Item Reviews should be evaluated according to the workflow type configured for each Push Article.
 
-Different Push Article types may have different completion conditions.
+Phase 1 supports two Push workflows:
 
-**ASML Push Items**
+- ASML Push
+- Outbound Push
 
-The expected completion workflow for ASML Push Items is:
+Both workflows use the same external destination location, but they have different final statuses and sending schedules.
 
-- Status: Transfer to ASML
-- Location: EXTERN-NL-EIN-01
+#### ASML Push Items
 
-However, Items transferred to this external location are not visible in the currently available Location Report or Scan Report.
+The expected final warehouse state is:
 
-StockScope therefore cannot directly verify the final transfer status or destination using these reports.
+- Location: `EXTERN-NL-EIN-01`
+- Status: `Transported to ASML`
+- Expected sending day: Every day
 
-When an ASML Push Item is no longer present in the monitored warehouse data after a successfully confirmed import, its active Push Item Review can become RESOLVED.
+ASML Push Items may require action on any working day.
 
-The resolution reason should indicate that the Item is no longer present in the monitored warehouse, rather than claiming that the transfer to ASML was directly verified.
+#### Outbound Push Items
 
-An Item may later return from ASML and appear in the warehouse again.
+The expected final warehouse state is:
 
-If the returning Item still matches the active Push Article configuration and requires attention, StockScope should create a new active Push Item Review while preserving the previous Review History.
+- Location: `EXTERN-NL-EIN-01`
+- Status: `Transported to customer`
+- Expected sending day: Configurable day of the week
 
-**Outbound Push Items**
+The expected sending day is maintained as part of the Push Article configuration.
 
-An Outbound Push Item is considered completed when its location becomes:
+StockScope can visually highlight an active Outbound Push Item when its expected sending day is approaching or has arrived.
 
-- Location: Transfer to lbOutbound
-- Status: Any
+The sending day affects operational priority but does not create a separate Review Reason.
 
-The location is the relevant completion condition for this workflow.
+#### Location Report Visibility
 
-A location such as `Transferred to LB Outbound` is part of the normal warehouse workflow and must not automatically generate a Review.
+Items transferred to `EXTERN-NL-EIN-01` are no longer included in the available Location Report.
 
-For an Item that is not configured as an Outbound Push Item, this location does not represent an error.
+Therefore, StockScope cannot directly verify the final external location or transport status using the Location Report alone.
 
-For an Outbound Push Item, reaching the configured outbound transfer location is considered a completion condition.
+The absence of an Item from the report does not prove that the Item was transported to ASML or to a customer.
 
-Review detection must consider the Item's Article, configured Push workflow type, current location and relevant business rules.
+StockScope must distinguish between:
 
-**Review Lifecycle**
+- an Item no longer present in the monitored warehouse
+- an Item whose final transport has been independently verified
 
-Mark as Handled records a user action but does not automatically resolve the Push Item Review.
+#### Push Item Review Resolution
 
-StockScope evaluates the configured completion rules after each successfully confirmed import.
+When a Push Item disappears from a successfully confirmed Location Report that is known to cover the complete monitored warehouse scope, its active Push Item Review can become `RESOLVED`.
 
-When the completion condition is confirmed, the Review becomes RESOLVED.
+The resolution reason should be:
 
-When the Item remains in the warehouse without meeting its completion condition, the Review remains active or returns to OPEN after verification.
+`No longer present in monitored warehouse`
 
-Push Article configuration should support different workflow types and completion rules.
+StockScope must not label this event as a verified transfer to ASML or to a customer.
+
+If the imported report is incomplete, covers only part of the warehouse or its coverage cannot be established, the missing Item must not automatically trigger final Review resolution.
+
+This protects Review History from incorrect conclusions caused by partial imports.
+
+#### Returning Items
+
+An Item may later return to the monitored warehouse and appear in a new Location Report.
+
+If the returning H-code still matches an active Push Article configuration and requires attention, StockScope should create a new Push Item Review.
+
+The previous resolved Review and its history must remain preserved.
+
+#### Review Lifecycle
+
+Mark as Handled records that a user has addressed the Push Item Review.
+
+It does not confirm that the Item has left the warehouse.
+
+The Review remains `WAITING FOR VERIFICATION` until a newer confirmed report provides sufficient evidence to evaluate the condition.
+
+If the Item is still present and continues to require action, the Review returns to `OPEN`.
+
+If the Item is no longer present in a confirmed complete report, the Review can become `RESOLVED` with the appropriate resolution reason.
+
+A Push Item Review may also become resolved without a manual Handled action when the required warehouse data change is detected.
+
+#### Future Verified Transport
+
+A future reliable data source may provide evidence of the actual final location and status.
+
+For example, a future Scan Report integration may provide additional scan information.
+
+When both the destination and final status can be reliably verified, StockScope may distinguish verified transport completion from disappearance from the monitored warehouse.
+
+Scan Report integration and verified transport history are not required for Phase 1.
 
 More advanced Push Rules based on Article Relations and complete sets remain part of Phase 2.
 
 ### Wrong Status Context
 
-A `Wrong Status` review must not be created based on the item status alone.
+Wrong Status Reviews follow the rules defined in Item Status Classification.
 
-The status must be evaluated together with the item's current location and the relevant warehouse business rules.
+A status alone is not enough to determine whether an Item has a problem.
+
+The Review Engine must evaluate the combination of:
+
+- Item status
+- current Item location
+- warehouse workflow context
+- defined business rules
 
 For example:
 
-**Status: AfterCleaning + Location: Transfer to BS → No Wrong Status review**
+**Status: Ready for Repair + Location: Repair Area → No Wrong Status Review**
 
-An item in `Transfer to BS` can already be included in the BS Location Report while still being in transit and not yet physically stored in a warehouse location.
+This status can be valid when a damaged empty box is being sent for repair.
 
-However:
+However, the same status in a normal storage location may require further investigation.
 
-**Status: AfterCleaning + Location: BS-A03 → Wrong Status review**
+An Item with status `On hold` should not automatically generate a Wrong Status Review.
 
-Once the item has been received into a normal BS warehouse location, the same status may no longer be valid for storage.
+Instead, StockScope displays an orange Attention indicator, allowing the user to investigate the reason and add an Item Note.
 
-The Review Engine should therefore evaluate the combination of location, status and business rules rather than treating a status as universally correct or incorrect.
+Attention indicators remain separate from the Review Workflow.
+
+Only a confirmed business rule violation should create a Wrong Status Review.
+
+If the required status-location rule has not yet been defined, StockScope should not assume that the Item is incorrectly stored.
 
 ---
 
@@ -1598,18 +1830,38 @@ Each Push Article defines:
 
 - Article
 - Push workflow type (ASML or Outbound)
-- optional expected sending day
+- expected sending day
 - optional note
 
-StockScope identifies H-code Items belonging to configured Push Articles and evaluates their current warehouse state against the corresponding workflow rules.
+StockScope identifies individual H-code Items belonging to configured Push Articles and evaluates their current warehouse state against the corresponding workflow rules.
 
-An Item receives an active Push Item Review only when it still requires attention according to its configured workflow.
+Phase 1 supports two Push workflows:
 
-An Outbound Push Item that has reached its configured transfer location should not remain an active Push Item Review.
+**ASML Push**
 
-An ASML Push Item that disappears from the monitored warehouse data can have its Review resolved with the reason that it is no longer present in the monitored warehouse.
+- Expected sending day: Every day
+- Expected final status: `Transported to ASML`
+- Expected final location: `EXTERN-NL-EIN-01`
 
-This does not prove that its final transfer to ASML was directly verified.
+**Outbound Push**
+
+- Expected sending day: Configurable day of the week
+- Expected final status: `Transported to customer`
+- Expected final location: `EXTERN-NL-EIN-01`
+
+An Item receives an active Push Item Review only when it requires further action according to its configured Push workflow.
+
+Items transferred to the external location are no longer included in the available Location Report.
+
+Therefore, StockScope cannot directly verify their final transport status or destination using the Location Report alone.
+
+When an Item disappears from a successfully confirmed report covering the complete monitored warehouse, its active Push Item Review can be resolved with the reason:
+
+`No longer present in monitored warehouse`
+
+This does not prove that the Item was transported to ASML or to a customer.
+
+If report coverage cannot be verified, the missing Item must not automatically trigger Review resolution.
 
 Push Article configuration remains independent from imported Location Report data and must be preserved during future imports.
 
@@ -1667,28 +1919,59 @@ Users should be able to:
 
 A separate Push Items management page is not required.
 
+
 ### Expected Sending Day
 
-Expected Sending Day represents an expected day of the week rather than a specific calendar date.
+Expected Sending Day defines when a Push Item is normally expected to be sent from the warehouse.
 
-Examples:
+The sending schedule depends on the configured Push workflow type.
+
+**ASML Push**
+
+ASML Push Items use a daily sending schedule.
+
+- Expected sending day: Every day
+- No individual weekday configuration is required
+
+**Outbound Push**
+
+Outbound Push Items use a configurable day of the week.
+
+Available options include:
 
 - Monday
+- Tuesday
 - Wednesday
+- Thursday
 - Friday
+- Saturday
+- Sunday
 
-The field is optional because not every Push Article needs a regular sending day.
+The expected sending day can be configured individually for each Outbound Push Article.
 
-When an expected sending day is configured, StockScope can visually highlight Push Items when the sending day is approaching.
+If no sending day is configured, the Item should remain visible as an active Push Item when it requires action, but no schedule-based priority indicator should be displayed.
+
+#### Sending Day Indicators
+
+StockScope can visually highlight active Push Items based on their expected sending schedule.
 
 For example:
 
-- one day before → sending soon
-- expected sending day → expected today
+- One day before the expected sending day: `Sending Soon`
+- On the expected sending day: `Expected Today`
 
-This should be a visual priority indicator rather than a separate Review Reason.
+For ASML Push Items, the daily schedule does not require a separate `Sending Soon` indicator.
 
-The exact icon and visual styling can be decided during UI implementation.
+Sending Day indicators provide operational context and help users prioritize work.
+
+They must not:
+
+- create a separate Review Reason
+- automatically mark a Review as Handled
+- resolve a Push Item Review
+- change the original warehouse status
+
+The exact indicator styling can be decided during UI implementation.
 
 ### Notes
 
