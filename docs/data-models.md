@@ -165,3 +165,29 @@ export interface ItemAnnotation {
 - A new import does not overwrite or remove the annotation.
 - The note belongs to the physical item, so it stays with it
   when the item moves to another location.
+
+## LocationCheck
+
+LocationCheck records when a physical check of a location was completed.
+
+After checking the items, putting boxes back and leaving the location
+tidy, the user clicks Checked before moving on.
+
+```ts
+export interface LocationCheck {
+    id: string;
+    locationCode: string;
+    checkedAt: string;
+}
+```
+
+### Rules
+
+- Each click on Checked creates a new record with its own `id`.
+- `locationCode` links the check to the location.
+- `checkedAt` stores the date and time of the completed check.
+- The same time is saved in `Location.lastCheckedAt`.
+- Previous check records stay in the history.
+- Checked does not change Review states.
+- Handled is used separately for problems the user has acted on.
+  These Reviews wait for verification by the next successful import.
