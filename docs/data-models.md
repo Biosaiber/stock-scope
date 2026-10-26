@@ -138,7 +138,7 @@ export interface PushArticleConfig {
   with the reason `push_configuration_removed`.
   Other Review reasons are not affected.
 
-  ## ItemAnnotation
+## ItemAnnotation
 
 ItemAnnotation stores a note for one physical item.
 It links to the item through `hCode`.
@@ -191,3 +191,130 @@ export interface LocationCheck {
 - Checked does not change Review states.
 - Handled is used separately for problems the user has acted on.
   These Reviews wait for verification by the next successful import.
+
+## Review
+
+A Review points out something that needs attention.
+It can belong to one item or one location.
+
+It keeps the reason, current state and a history of events.
+
+```ts
+import type { PushWorkflowType } from './push-article-config.model';
+
+export type ReviewState =
+    | 'open'
+    | 'waiting_for_verification'
+    | 'resolved';
+
+export type ReviewReason =
+    | 'push_item'
+    | 'wrong_status'
+    | 'unexpected_mixed_item'
+    | 'low_occupancy'
+    | 'nearly_full_occupancy'
+    | 'full_occupancy'
+    | 'over_capacity';
+
+export type ReviewTarget =
+    | { type: 'item'; hCode: string }
+    | { type: 'location'; locationCode: string };
+
+export type ReviewEventSource =
+    | 'import'
+    | 'user_action'
+    | 'configuration_change';
+
+export type ReviewResolutionReason =
+    | 'condition_cleared'
+    | 'item_no_longer_present'
+    | 'push_configuration_removed'
+    | 'capacity_unavailable';
+
+export interface Review {
+    id: string;
+    reason: ReviewReason;
+    state: ReviewState;
+    target: ReviewTarget;
+    detectedAt: string;
+    history: ReviewHistoryEvent[];
+}
+
+export interface ReviewHistoryEvent {
+    fromState: ReviewState | null;
+    toState: ReviewState;
+    occurredAt: string;
+    source: ReviewEventSource;
+    importId: string | null;
+    resolutionReason: ReviewResolutionReason | null;
+    workflowChange: {
+        from: PushWorkflowType;
+        to: PushWorkflowType;
+    } | null;
+}
+```
+
+### States
+
+- `open`: the issue has been detected and has not been marked Handled.
+- `waiting_for_verification`: the user clicked Handled.
+  We are waiting for a successful import to check the result.
+- `resolved`: the condition no longer applies or can no longer be checked.
+
+Both `open` and `waiting_for_verification` count as active Reviews.
+
+### Lifecycle
+
+- Only one active Review can exist for the same target and reason.
+- Clicking Handled changes `open` to `waiting_for_verification`.
+- If the next successful import still shows the same condition,
+  the existing Review and its state stay unchanged.
+- If the condition disappears, the Review becomes `resolved`.
+- If the problem returns after resolution, a new Review is created
+  with a new `id`. The previous Review stays in the history.
+- An item Review stays with its `hCode` when the item moves.
+- Clicking Checked on a location does not change its Reviews.
+
+### Resolution reasons
+
+| Reason | Meaning |
+| --- | --- |
+| `condition_cleared` | The condition no longer applies. |
+| `item_no_longer_present` | The item is missing from a new complete report for the same warehouse. |
+| `push_configuration_removed` | The article's push configuration was removed. |
+| `capacity_unavailable` | The location's capacity is no longer available, so occupancy cannot be checked. |
+
+An item missing from a report does not prove that it was shipped.
+It only tells us that it is no longer present in that report.
+
+### Occupancy rules
+
+| Occupancy | Review reason |
+| --- | --- |
+| 0% to 15%, including both limits | `low_occupancy` |
+| Above 15% and below 90% | No occupancy Review |
+| 90% to below 100% | `nearly_full_occupancy` |
+| Exactly 100% | `full_occupancy` |
+| Above 100% | `over_capacity` |
+
+- Empty locations with a known capacity also get `low_occupancy`.
+- Unknown capacity means no occupancy Review can be created.
+- Limits are checked before rounding the displayed percentage.
+- The low and nearly full limits are kept in configuration
+  so they can be adjusted later.
+
+### Event history
+
+- `detectedAt` stores when this Review was first detected.
+- The first event has `fromState: null` and `toState: 'open'`.
+- Each event records its time and source.
+- `importId` identifies the import that caused the event.
+  It is `null` for events caused by user actions or configuration changes.
+- `resolutionReason` is filled when the Review is resolved.
+  Otherwise, it is `null`.
+- If a push workflow changes and the item still meets the push conditions,
+  the Review keeps its `id` and state.
+  An event records the old and new workflow in `workflowChange`.
+- For a workflow change event, `fromState` and `toState` are the same.
+- `workflowChange` is `null` for other events.
+- Previous events are kept unchanged.
