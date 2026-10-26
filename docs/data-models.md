@@ -1,5 +1,30 @@
 # StockScope – Data Models
 
+This document explains the StockScope data models,
+how they connect and the rules they follow.
+
+## Contents
+
+- [Date and time formats](#date-and-time-formats)
+- [Article](#article)
+- [Item](#item)
+- [Location](#location)
+- [PushArticleConfig](#pusharticleconfig)
+- [ItemAnnotation](#itemannotation)
+- [LocationCheck](#locationcheck)
+- [Review](#review)
+- [Import](#import)
+- [HistoricalItemRecord](#historicalitemrecord)
+- [WarehouseSnapshot](#warehousesnapshot)
+- [LocationSnapshot](#locationsnapshot)
+
+## Date and time formats
+
+- Timestamps are stored as ISO 8601 strings in UTC,
+  for example `2026-10-26T20:30:00Z`.
+- `reportDate` stores only the report date in `YYYY-MM-DD` format.
+- The application displays timestamps in the user's local time.
+
 ## Article
 
 An Article describes a type of box or packaging.
@@ -51,7 +76,7 @@ export interface Item {
 
 ### Rules
 
-- `hCode` identifies one physical item. The code can start with H or R of F.
+- `hCode` identifies one physical item. The code can start with H or R or F.
 - Multiple items can use the same article.
 - `locationCode` tells us where the item is in the latest confirmed report.
 - `status` stores the status from the report as text.
