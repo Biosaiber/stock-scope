@@ -413,3 +413,71 @@ export interface HistoricalItemRecord {
   into this record.
 - Records stay in the history even if the item is no longer
   present in a later report.
+
+## WarehouseSnapshot
+
+WarehouseSnapshot keeps a summary of the warehouse
+when an import is confirmed.
+
+It stores item and location counts, occupancy
+and the number of active Reviews.
+
+```ts
+import type { ReviewReason } from './review.model';
+
+export interface WarehouseSnapshot {
+    importId: string;
+    totalItemCount: number;
+    occupancyPercent: number | null;
+    activeReviewCount: number;
+    activeReviewCountsByReason: Record<ReviewReason, number>;
+    totalLocationCount: number;
+    locationsWithCapacityCount: number;
+    totalConfiguredCapacity: number;
+    itemsInLocationsWithCapacityCount: number;
+}
+```
+
+### Rules
+
+- Each confirmed import has one warehouse snapshot.
+- `importId` links the snapshot to its import.
+- `totalItemCount` includes all items in the imported warehouse data.
+- `totalLocationCount` includes all known locations in scope,
+  including empty locations.
+- `locationsWithCapacityCount` counts locations with a known capacity.
+- `totalConfiguredCapacity` is the sum of those capacities.
+- `itemsInLocationsWithCapacityCount` counts only items
+  in locations with a known capacity.
+- When no capacity is known, these last three values are zero.
+
+### Occupancy
+
+Warehouse occupancy is calculated as:
+
+```text
+itemsInLocationsWithCapacityCount * 100 / totalConfiguredCapacity
+```
+
+- We use the total item count and capacity of the same locations.
+- Items in locations with unknown capacity are excluded
+  from this calculation.
+- We do not average individual location percentages.
+- `occupancyPercent` is `null` when total configured capacity is zero.
+- Occupancy can be above 100%.
+
+### Reviews
+
+- `activeReviewCount` counts all active Reviews in the warehouse scope.
+- Active means `open` or `waiting_for_verification`.
+- Each Review is counted once.
+- `activeReviewCountsByReason` stores the count for every Review reason,
+  including reasons with a count of zero.
+- The counts reflect the state after Reviews are evaluated
+  for the confirmed import.
+
+### History
+
+- The snapshot stays unchanged after confirmation.
+- Later user actions or configuration changes do not update it.
+- A new confirmed import creates a new snapshot.
