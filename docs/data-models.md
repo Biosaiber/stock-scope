@@ -318,3 +318,57 @@ It only tells us that it is no longer present in that report.
 - For a workflow change event, `fromState` and `toState` are the same.
 - `workflowChange` is `null` for other events.
 - Previous events are kept unchanged.
+
+## Import
+
+An Import records one report successfully added to StockScope.
+It keeps the file name, report date, confirmation time
+and a reference to the original Excel file.
+
+```ts
+export interface Import {
+    id: string;
+    fileName: string;
+    reportDate: string;
+    confirmedAt: string;
+    fileHash: string;
+    archiveFileKey: string;
+}
+```
+
+### Rules
+
+- `id` identifies the import.
+- `fileName` stores the original file name.
+- `reportDate` stores the date the report describes,
+  in `YYYY-MM-DD` format.
+- `confirmedAt` stores when the import was successfully confirmed,
+  as an ISO timestamp.
+- The report date and confirmation time can be different.
+- Multiple reports can be imported on the same day.
+
+### File hash
+
+- `fileHash` is a fingerprint calculated from the file's contents.
+- It helps detect the same file uploaded again,
+  even if the file has been renamed.
+- The hash does not store the file or explain what changed.
+- A new Excel export can have a different hash even when warehouse
+  data is unchanged, because file metadata may be different.
+
+### Original file
+
+- The original Excel file must be archived as part of the import.
+- `archiveFileKey` tells the application where to find it.
+- If archiving fails, the import cannot be completed.
+
+### All-or-nothing
+
+- Validation and preview happen before confirmation.
+- A successful import applies all its changes together.
+- If the import fails or the user cancels it,
+  current data, Reviews and history stay unchanged.
+- Historical item records and snapshots link to this import
+  through `importId`.
+- After confirmation, these historical records and snapshots
+  are not rewritten.
