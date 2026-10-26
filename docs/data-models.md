@@ -58,3 +58,37 @@ export interface Item {
 - Item notes are stored separately in `ItemAnnotation`.
 - Previous locations and statuses are kept in `HistoricalItemRecord`.
 
+## Location
+
+A Location is a place in the warehouse where items can be stored.
+Each location has its own code and belongs to a department.
+
+It holds the dimensions, capacity and the time of the last
+completed physical check.
+
+```ts
+export interface Location {
+    code: string;
+    department: string;
+    length: number | null;
+    width: number | null;
+    height: number | null;
+    lastCheckedAt: string | null;
+    capacity: number | null;
+}
+```
+
+### Rules
+
+- `code` identifies the location.
+- Items link to the location through `locationCode`.
+- Length, width and height are stored in metres.
+- `capacity` is the number of items the location can hold.
+  It must be greater than zero, or `null` when unknown.
+- An empty location has zero items. This does not mean its capacity is zero.
+- `lastCheckedAt` stores the time of the latest completed physical check.
+  It is `null` if no check has been recorded.
+- Clicking Checked creates a `LocationCheck` and updates `lastCheckedAt`.
+  It does not change Review states.
+- Historical capacity and occupancy are kept in `LocationSnapshot`.
+
