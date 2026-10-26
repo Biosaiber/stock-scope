@@ -92,3 +92,48 @@ export interface Location {
   It does not change Review states.
 - Historical capacity and occupancy are kept in `LocationSnapshot`.
 
+## PushArticleConfig
+
+PushArticleConfig marks an article for the push workflow.
+It stores the workflow type, an optional sending day and a note.
+
+The setting belongs to the article, so we do not need to configure
+each physical item separately.
+
+```ts
+export type PushWorkflowType = 'ASML' | 'OUTBOUND';
+
+export type PushDayType =
+    | 'mon'
+    | 'tue'
+    | 'wed'
+    | 'thu'
+    | 'fri'
+    | 'sat'
+    | 'sun'
+    | 'every-day'
+    | null;
+
+export interface PushArticleConfig {
+    articleId: string;
+    note: string | null;
+    workflowType: PushWorkflowType;
+    pushDay: PushDayType;
+    updatedAt: string;
+}
+```
+
+### Rules
+
+- Each article can have one push configuration.
+- `articleId` links the configuration to the article.
+- `workflowType` selects the ASML or OUTBOUND workflow.
+- `pushDay` gives the planned or expected sending day.
+- `every-day` means the article is expected to be sent every day.
+- `null` means no day has been set. The article is still a push article.
+- The day and note give useful context. They do not create a shipping schedule.
+- `updatedAt` stores the time of the latest configuration change.
+- Items that meet the push conditions can have a `push_item` Review.
+- Removing the configuration resolves its active `push_item` Reviews
+  with the reason `push_configuration_removed`.
+  Other Review reasons are not affected.
