@@ -481,3 +481,70 @@ itemsInLocationsWithCapacityCount * 100 / totalConfiguredCapacity
 - The snapshot stays unchanged after confirmation.
 - Later user actions or configuration changes do not update it.
 - A new confirmed import creates a new snapshot.
+
+## LocationSnapshot
+
+LocationSnapshot keeps a summary of one location
+when an import is confirmed.
+
+It stores the capacity, item count, occupancy and active Reviews
+at that time.
+
+```ts
+import type { ReviewReason } from './review.model';
+
+export interface LocationSnapshot {
+    importId: string;
+    locationCode: string;
+    capacity: number | null;
+    itemCount: number;
+    occupancyPercent: number | null;
+    activeReviewCount: number;
+    activeReviewCountsByReason: Record<ReviewReason, number>;
+}
+```
+
+### Rules
+
+- The combination of `importId` and `locationCode` must be unique.
+  Each location has one snapshot per confirmed import.
+- `importId` links the snapshot to its import.
+- `locationCode` identifies the location.
+- `capacity` keeps the capacity used at the time of the import.
+  It is `null` when unknown.
+- `itemCount` counts items on the location in that import.
+  An empty location has a count of zero.
+
+### Occupancy
+
+Location occupancy is calculated as:
+
+```text
+itemCount * 100 / capacity
+```
+
+- `occupancyPercent` is `null` when capacity is unknown.
+- A known capacity must be greater than zero.
+- An empty location with a known capacity has 0% occupancy.
+- Occupancy can be above 100%.
+
+### Reviews
+
+- Active means `open` or `waiting_for_verification`.
+- Counts include Reviews for the location itself
+  and Reviews for items on that location in the import.
+- Each Review is counted once in this location snapshot.
+- `activeReviewCountsByReason` includes every Review reason,
+  even when its count is zero.
+- Counts are saved after Reviews are evaluated for the import.
+- If an item moves, its Review is counted under its new location
+  in the next snapshot. Previous snapshots stay unchanged.
+
+### History
+
+- The snapshot stays unchanged after confirmation.
+- Later capacity changes, physical checks and Review actions
+  do not update it.
+- The report date and confirmation time are available
+  through `importId`.
+- A new confirmed import creates a new snapshot.
