@@ -137,3 +137,31 @@ export interface PushArticleConfig {
 - Removing the configuration resolves its active `push_item` Reviews
   with the reason `push_configuration_removed`.
   Other Review reasons are not affected.
+
+  ## ItemAnnotation
+
+ItemAnnotation stores a note for one physical item.
+It links to the item through `hCode`.
+
+We keep the note separate from imported item data,
+so a new report does not overwrite it.
+
+```ts
+export interface ItemAnnotation {
+    hCode: string;
+    note: string | null;
+    noteUpdatedAt: string | null;
+}
+```
+
+### Rules
+
+- Each item can have one annotation record.
+- `hCode` identifies the item the note belongs to.
+- `note` is `null` when no note is stored.
+- `noteUpdatedAt` stores the time when the note was last changed.
+  It is `null` if the note has never been changed.
+- Editing or clearing a note updates `noteUpdatedAt`.
+- A new import does not overwrite or remove the annotation.
+- The note belongs to the physical item, so it stays with it
+  when the item moves to another location.
