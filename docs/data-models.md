@@ -372,3 +372,44 @@ export interface Import {
   through `importId`.
 - After confirmation, these historical records and snapshots
   are not rewritten.
+
+## HistoricalItemRecord
+
+HistoricalItemRecord keeps an item's data from one confirmed import.
+
+An item can move or change status later.
+This record keeps its location, status and article details
+as they were in that report.
+
+```ts
+export interface HistoricalItemRecord {
+    importId: string;
+    hCode: string;
+    articleId: string;
+    locationCode: string;
+    status: string;
+    articleName: string;
+    twelveNcNumber: string;
+    customerName: string;
+    length: number | null;
+    width: number | null;
+    unit: string | null;
+    categories: string[] | null;
+}
+```
+
+### Rules
+
+- `importId` links the record to its confirmed import.
+- `hCode` identifies the physical item.
+- The combination of `importId` and `hCode` must be unique.
+  One item has only one record in each import.
+- Location, status and article details are copied from that import.
+- Length and width are stored in metres.
+- Later changes to Item or Article do not change this record.
+- The report date and confirmation time are available through
+  `importId`, so we do not store them again here.
+- Item notes and configured article relationships are not copied
+  into this record.
+- Records stay in the history even if the item is no longer
+  present in a later report.
