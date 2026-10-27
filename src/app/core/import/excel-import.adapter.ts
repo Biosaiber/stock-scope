@@ -1,7 +1,10 @@
 import type { Item } from "../models/item.model";
 import type { Article } from "../models/article.model";
 import type { Location } from "../models/location.model";
+import type { ExcelImportResult } from "./excel-import-result.model";
+
 import type { ExcelLocationRow } from "./excel-location-row.model";
+
 
 //Item
 export function mapRowToItem(
@@ -61,6 +64,42 @@ export function mapRowToLocation(
     };
 }
 
+//Import result
+export function mapRowsToImportResult(
+    rows: ExcelLocationRow[],
+): ExcelImportResult {
+    const articles = new Map<string, Article>();
+    const locations = new Map<string, Location>();
+    const items: Item[] = [];
 
+    for (const row of rows) {
+        const articleId = row.description.trim();
+        const locationCode = row.location.trim();
+
+        if (!articleId) {
+            throw new Error(`Missing article description for item "${row.object}".`);
+        }
+
+        if (!locationCode) {
+            throw new Error(`Missing location for item "${row.object}".`);
+        }
+
+        if (!articles.has(articleId)) {
+            articles.set(articleId, mapRowToArticle(row, articleId));
+        }
+
+        if (!locations.has(locationCode)) {
+            locations.set(locationCode, mapRowToLocation(row));
+        }
+
+        items.push(mapRowToItem(row, articleId));
+    }
+    
+    return {
+        articles: Array.from(articles.values()),
+        items,
+        locations: Array.from(locations.values()),
+    };
+}
 
 
