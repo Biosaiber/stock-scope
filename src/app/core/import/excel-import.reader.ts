@@ -70,3 +70,35 @@ export function validateExcelHeaders(
         }
     })
 }
+
+function readRequiredText(
+    value: unknown,
+    column: string,
+    rowNumber: number,
+): string {
+    if (typeof value !== 'string' || value.trim() === '') {
+        throw new Error(
+            `Row ${rowNumber}: missing or invalid text in "${column}".`,
+        );
+    }
+
+    return value.trim();
+}
+
+function readOptionalText(
+    value: unknown,
+    column: string,
+    rowNumber: number,
+): string | null {
+    if (value === null || value === undefined) {
+        return null;
+    }
+
+    if (typeof value !== 'string') {
+        throw new Error(
+            `Row ${rowNumber}: invalid text in "${column}".`,
+        );
+    }
+
+    return value.trim() || null;
+}
