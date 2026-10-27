@@ -102,3 +102,33 @@ function readOptionalText(
 
     return value.trim() || null;
 }
+
+function readRequiredNumber(
+    value: unknown,
+    column: string,
+    rowNumber: number,
+): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error(
+            `Row ${rowNumber}: missing or invalid number in "${column}".`,
+        );
+    }
+
+    return value;
+}
+
+function readOptionalNumber(
+    value: unknown,
+    column: string,
+    rowNumber: number,
+): number | null {
+    if (
+        value === null ||
+        value === undefined ||
+        (typeof value === 'string' && value.trim() === '')
+    ) {
+        return null;
+    }
+
+    return readRequiredNumber(value, column, rowNumber);
+}
