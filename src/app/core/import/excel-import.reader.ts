@@ -160,3 +160,33 @@ export function parseExcelLocationRow(
         entity: readRequiredText(cells[14], 'entity', rowNumber),
     };
 }
+
+export async function readExcelLocationRows(
+    file: File,
+): Promise<ExcelLocationRow[]> {
+    const cells = await readExcelCells(file);
+    const rows: ExcelLocationRow[] = [];
+
+    for (let index = 1; index < cells.length; index++) {
+        const row = cells[index];
+
+        const isEmpty = row.every(
+            value =>
+                value === null ||
+                value === undefined ||
+                (typeof value === 'string' && value.trim() === ''),
+        );
+
+        if (isEmpty) {
+            continue;
+        }
+
+        rows.push(parseExcelLocationRow(row, index + 1));
+    }
+
+    if (rows.length === 0) {
+        throw new Error('Excel worksheet contains no data rows.');
+    }
+    
+    return rows;
+}
