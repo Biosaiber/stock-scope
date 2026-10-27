@@ -1,7 +1,9 @@
 import type { Item } from "../models/item.model";
 import type { Article } from "../models/article.model";
+import type { Location } from "../models/location.model";
 import type { ExcelLocationRow } from "./excel-location-row.model";
 
+//Item
 export function mapRowToItem(
     row: ExcelLocationRow,
     articleId: string, 
@@ -20,6 +22,7 @@ export function mapRowToItem(
     };
 }
 
+//Article
 export function mapRowToArticle(
     row: ExcelLocationRow,
     articleId: string,
@@ -43,7 +46,20 @@ export function mapRowToArticle(
     
 }
 
-
+//Location
+export function mapRowToLocation(
+    row: ExcelLocationRow,
+): Location {
+    return {
+        code: row.location.trim(),
+        department: row.department.trim(),
+        length: null,
+        width: null,
+        height: null,
+        lastCheckedAt: null,
+        capacity: null,
+    };
+}
 
 
 
