@@ -9,7 +9,7 @@ import type { ExcelLocationRow } from "./excel-location-row.model";
 //Item
 export function mapRowToItem(
     row: ExcelLocationRow,
-    articleId: string, 
+    articleId: string,
 ): Item {
     const status = row.status?.trim();
 
@@ -46,7 +46,7 @@ export function mapRowToArticle(
         categories: categories?.length ? categories : null,
         relatedArticleIds: null,
     };
-    
+
 }
 
 //Location
@@ -71,10 +71,12 @@ export function mapRowsToImportResult(
     const articles = new Map<string, Article>();
     const locations = new Map<string, Location>();
     const items: Item[] = [];
+    const seenHCodes = new Set<string>();
 
     for (const row of rows) {
         const articleId = row.description.trim();
         const locationCode = row.location.trim();
+        const hCode = row.object.trim();
 
         if (!articleId) {
             throw new Error(`Missing article description for item "${row.object}".`);
@@ -91,10 +93,18 @@ export function mapRowsToImportResult(
         if (!locations.has(locationCode)) {
             locations.set(locationCode, mapRowToLocation(row));
         }
+        if (!hCode) {
+            throw new Error('Missing item H-code.');
+        }
+
+        if (seenHCodes.has(hCode)) {
+            throw new Error(`Duplicate item H-code "${hCode}".`);
+        }
 
         items.push(mapRowToItem(row, articleId));
+        seenHCodes.add(hCode);
     }
-    
+
     return {
         articles: Array.from(articles.values()),
         items,
