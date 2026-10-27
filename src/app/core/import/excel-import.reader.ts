@@ -1,3 +1,4 @@
+import type { ExcelLocationRow } from './excel-location-row.model';
 import { read, utils } from 'xlsx';
 
 const EXPECTED_HEADERS = [
@@ -131,4 +132,31 @@ function readOptionalNumber(
     }
 
     return readRequiredNumber(value, column, rowNumber);
+}
+
+export function parseExcelLocationRow(
+    cells: unknown[],
+    rowNumber: number,
+): ExcelLocationRow {
+    return {
+        customer: readRequiredText(cells[0], 'customer', rowNumber),
+        description: readRequiredText(cells[1], 'description', rowNumber),
+        articleNrCustomer: readRequiredText(cells[2], 'articleNrCustomer', rowNumber),
+        object: readRequiredText(cells[3], 'object', rowNumber),
+        'object description': readOptionalText(
+            cells[4],
+            'object description',
+            rowNumber,
+        ),
+        department: readRequiredText(cells[5], 'department', rowNumber),
+        location: readRequiredText(cells[6], 'location', rowNumber),
+        level: readRequiredText(cells[7], 'level', rowNumber),
+        length: readOptionalNumber(cells[8], 'length', rowNumber),
+        width: readOptionalNumber(cells[9], 'width', rowNumber),
+        unit: readRequiredText(cells[10], 'unit', rowNumber),
+        status: readOptionalText(cells[11], 'status', rowNumber),
+        amount: readRequiredNumber(cells[12], 'amount', rowNumber),
+        kinds: readOptionalText(cells[13], 'kinds', rowNumber),
+        entity: readRequiredText(cells[14], 'entity', rowNumber),
+    };
 }
