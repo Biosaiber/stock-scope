@@ -69,7 +69,7 @@ export function validateExcelHeaders(
                 `Invalid header in column ${index + 1}: expected "${expected}".`,
             );
         }
-    })
+    });
 }
 
 function readRequiredText(

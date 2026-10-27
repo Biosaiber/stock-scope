@@ -8,21 +8,15 @@ import type { ExcelLocationRow } from "./excel-location-row.model";
 
 //Item
 export function mapRowToItem(
-    row: ExcelLocationRow,
-    articleId: string,
+  row: ExcelLocationRow,
+  articleId: string,
 ): Item {
-    const status = row.status?.trim();
-
-    if (!status) {
-        throw new Error(`Missing status for item "${row.object}".`);
-    }
-
-    return {
-        hCode: row.object.trim(),
-        articleId,
-        locationCode: row.location.trim(),
-        status,
-    };
+  return {
+    hCode: row.object.trim(),
+    articleId,
+    locationCode: row.location.trim(),
+    status: row.status?.trim() || null,
+  };
 }
 
 //Article
