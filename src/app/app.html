@@ -3,31 +3,48 @@
 
   <label for="excel-file">Import Excel Location Report</label>
 
-  <input
-    id="excel-file"
-    type="file"
-    accept=".xlsx"
-    [disabled]="isImporting()"
-    (change)="onFileSelected($event)"
-  />
+  <input id="excel-file" type="file" accept=".xlsx" [disabled]="isImporting()" (change)="onFileSelected($event)" />
 
   @if (isImporting()) {
-    <p role="status">Importing...</p>
+  <p role="status">Importing...</p>
   }
 
   @if (importError(); as error) {
-    <p role="alert">{{ error }}</p>
+  <p role="alert">{{ error }}</p>
   }
 
   @if (importResult(); as result) {
-    <section aria-labelledby="import-result-heading">
-      <h2 id="import-result-heading">Last successful import</h2>
+  <section aria-labelledby="import-result-heading">
+    <h2 id="import-result-heading">Last successful import</h2>
 
-      <ul>
-        <li>Articles: {{ result.articles.length }}</li>
-        <li>Items: {{ result.items.length }}</li>
-        <li>Locations: {{ result.locations.length }}</li>
-      </ul>
-    </section>
+    <ul>
+      <li>Articles: {{ result.articles.length }}</li>
+      <li>Items: {{ result.items.length }}</li>
+      <li>Locations: {{ result.locations.length }}</li>
+    </ul>
+  </section>
+  }
+
+  @if (importPreview(); as preview) {
+  <section>
+    <h2>Import preview</h2>
+
+    <p>Data rows: {{ preview.sourceRows.length }}</p>
+    <p>Rows passing validation: {{ preview.rows.length }}</p>
+    <p>Issues found: {{ preview.issues.length }}</p>
+
+    @if (preview.issues.length > 0) {
+    <ul>
+      @for (issue of preview.issues; track $index) {
+      <li>
+        Row {{ issue.rowNumber }} —
+        {{ issue.column }}: {{ issue.message }}
+      </li>
+      }
+    </ul>
+    } @else {
+    <p>No issues found in the current validation.</p>
+    }
+  </section>
   }
 </main>

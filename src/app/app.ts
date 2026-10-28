@@ -10,6 +10,7 @@ import type { ExcelImportResult } from './core/import/excel-import-result.model'
 export class App {
   protected readonly isImporting = signal(false);
   protected readonly importResult = signal<ExcelImportResult | null>(null);
+  protected readonly importPreview = signal<Awaited<ReturnType<typeof importExcel>> | null>(null);
   protected readonly importError = signal<string | null>(null);
 
   protected async onFileSelected(event: Event): Promise<void> {
@@ -26,7 +27,7 @@ export class App {
     try {
       const result = await importExcel(file);
 
-      this.importResult.set(result);
+      this.importPreview.set(result);
     } catch (error: unknown) {
       this.importError.set(
         error instanceof Error ? error.message : 'Excel import failed.',
