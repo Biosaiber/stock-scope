@@ -1,5 +1,33 @@
-<main class="main">
-
+<main>
   <h1>StockScope</h1>
 
+  <label for="excel-file">Import Excel Location Report</label>
+
+  <input
+    id="excel-file"
+    type="file"
+    accept=".xlsx"
+    [disabled]="isImporting()"
+    (change)="onFileSelected($event)"
+  />
+
+  @if (isImporting()) {
+    <p role="status">Importing...</p>
+  }
+
+  @if (importError(); as error) {
+    <p role="alert">{{ error }}</p>
+  }
+
+  @if (importResult(); as result) {
+    <section aria-labelledby="import-result-heading">
+      <h2 id="import-result-heading">Last successful import</h2>
+
+      <ul>
+        <li>Articles: {{ result.articles.length }}</li>
+        <li>Items: {{ result.items.length }}</li>
+        <li>Locations: {{ result.locations.length }}</li>
+      </ul>
+    </section>
+  }
 </main>

@@ -5,7 +5,17 @@ import type { ExcelImportResult } from "./excel-import-result.model";
 export async function importExcel(
     file: File,
 ): Promise<ExcelImportResult> {
-    const rows = await readExcelLocationRows(file);
+    const result = await readExcelLocationRows(file);
 
-    return mapRowsToImportResult(rows);
+    if (result.issues.length > 0) {
+        throw new Error(
+            result.issues
+                .map(issue =>
+                    `Row ${issue.rowNumber}: ${issue.message} (${issue.column})`
+                )
+                .join('\n'),
+        );
+    }
+
+    return mapRowsToImportResult(result.rows);
 }
