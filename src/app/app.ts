@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { importExcel } from './core/import/excel-import';
 import type { ExcelImportResult } from './core/import/excel-import-result.model';
+import { mapRowsToImportResult } from './core/import/excel-import.adapter';
 
 @Component({
   selector: 'app-root',
@@ -36,5 +37,30 @@ export class App {
       this.isImporting.set(false);
       input.value = '';
     }
+  }
+  protected confirmImport(): void {
+    const preview = this.importPreview();
+
+    if (!preview || preview.issues.length > 0) {
+      return;
+    }
+
+    this.importError.set(null);
+
+    try {
+      const result = mapRowsToImportResult(preview.rows);
+
+      this.importResult.set(result);
+      this.importPreview.set(null);
+    } catch (error: unknown) {
+      this.importError.set(
+        error instanceof Error ? error.message : 'Excel import failed.',
+      );
+    }
+  }
+
+  protected cancelImport(): void {
+    this.importPreview.set(null);
+    this.importError.set(null);
   }
 }
