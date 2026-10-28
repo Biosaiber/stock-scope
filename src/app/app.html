@@ -45,6 +45,14 @@
     } @else {
     <p>No issues found in the current validation.</p>
     }
+
+    <button type="button" (click)="confirmImport()" [disabled]="preview.issues.length > 0 || isImporting()">
+      Confirm import
+    </button>
+
+    <button type="button" (click)="cancelImport()">
+      Cancel
+    </button>
   </section>
   }
 </main>
