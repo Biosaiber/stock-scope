@@ -164,6 +164,19 @@ function readNumber(
         return null;
     }
 
+    if (value <= 0) {
+        options.issues.push({
+            severity: 'warning',
+            code: 'invalid_value',
+            rowNumber: options.rowNumber,
+            hCode: options.hCode,
+            column: options.column,
+            message: `Expected a number greater than zero, received ${value}.`,
+        });
+
+        return null;
+    }
+
     return value;
 }
 
