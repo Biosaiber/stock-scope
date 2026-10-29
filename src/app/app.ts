@@ -29,9 +29,22 @@ export class App {
 
     this.isImporting.set(true);
     this.importError.set(null);
+    this.importPreview.set(null);
 
     try {
       const result = await importExcel(file);
+
+      if (
+        result.fileFingerprint ===
+        this.confirmedImport()?.fileFingerprint
+      ) {
+        this.importPreview.set(null);
+        this.importError.set(
+          'This report is already loaded. No data was changed.',
+        );
+
+        return;
+      }
 
       this.importPreview.set(result);
     } catch (error: unknown) {
