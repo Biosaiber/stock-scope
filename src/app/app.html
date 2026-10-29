@@ -37,6 +37,7 @@
     <ul>
       @for (issue of preview.issues; track $index) {
       <li>
+        {{ issue.severity === 'error' ? 'Error' : 'Warning' }} —
         Row {{ issue.rowNumber }} —
         {{ issue.column }}: {{ issue.message }}
       </li>
@@ -46,7 +47,7 @@
     <p>No issues found in the current validation.</p>
     }
 
-    <button type="button" (click)="confirmImport()" [disabled]="preview.issues.length > 0 || isImporting()">
+    <button type="button" (click)="confirmImport()" [disabled]="hasBlockingIssues() || isImporting()">
       Confirm import
     </button>
 

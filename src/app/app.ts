@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed } from '@angular/core';
 import { importExcel } from './core/import/excel-import';
 import type { ExcelImportResult } from './core/import/excel-import-result.model';
 import { mapRowsToImportResult } from './core/import/excel-import.adapter';
@@ -12,6 +12,10 @@ export class App {
   protected readonly isImporting = signal(false);
   protected readonly importResult = signal<ExcelImportResult | null>(null);
   protected readonly importPreview = signal<Awaited<ReturnType<typeof importExcel>> | null>(null);
+  protected readonly hasBlockingIssues = computed(() => {
+    const preview = this.importPreview();
+    return preview?.issues.some(issue => issue.severity === 'error') ?? false;
+  });
   protected readonly importError = signal<string | null>(null);
 
   protected async onFileSelected(event: Event): Promise<void> {
@@ -41,7 +45,7 @@ export class App {
   protected confirmImport(): void {
     const preview = this.importPreview();
 
-    if (!preview || preview.issues.length > 0) {
+    if (!preview || this.hasBlockingIssues()) {
       return;
     }
 
