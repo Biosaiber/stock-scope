@@ -73,7 +73,18 @@ export function validateExcelHeaders(
 }
 
 export interface ImportIssue {
+    severity: 'error' | 'warning';
+
+    code:
+    | 'missing_value'
+    | 'invalid_value'
+    | 'duplicate_hcode'
+    | 'conflicting_hcode'
+    | 'wrong_department';
+
     rowNumber: number;
+    relatedRowNumbers?: number[];
+    hCode?: string;
     column: string;
     message: string;
 }
@@ -86,6 +97,13 @@ function readRequiredText(
 ): string | null {
     if (typeof value !== 'string' || value.trim() === '') {
         issues.push({
+            severity: 'error',
+            code:
+                value === null ||
+                    value === undefined ||
+                    (typeof value === 'string' && value.trim() === '')
+                    ? 'missing_value'
+                    : 'invalid_value',
             rowNumber,
             column,
             message: 'Missing or invalid text.',
@@ -198,57 +216,57 @@ export function parseExcelLocationRow(
 }
 
 export interface ExcelLocationReadResult {
-  rows: ExcelLocationRow[];
-  issues: ImportIssue[];
-  sourceRows: {
-    rowNumber: number;
-    cells: unknown[];
-  }[];
+    rows: ExcelLocationRow[];
+    issues: ImportIssue[];
+    sourceRows: {
+        rowNumber: number;
+        cells: unknown[];
+    }[];
 }
 
 export async function readExcelLocationRows(
-  file: File,
+    file: File,
 ): Promise<ExcelLocationReadResult> {
-  const cells = await readExcelCells(file);
-  const rows: ExcelLocationRow[] = [];
-  const issues: ImportIssue[] = [];
-  const sourceRows: ExcelLocationReadResult['sourceRows'] = [];
+    const cells = await readExcelCells(file);
+    const rows: ExcelLocationRow[] = [];
+    const issues: ImportIssue[] = [];
+    const sourceRows: ExcelLocationReadResult['sourceRows'] = [];
 
-  for (let index = 1; index < cells.length; index++) {
-    const row = cells[index];
+    for (let index = 1; index < cells.length; index++) {
+        const row = cells[index];
 
-    const isEmpty = row.every(
-      value =>
-        value === null ||
-        value === undefined ||
-        (typeof value === 'string' && value.trim() === ''),
-    );
+        const isEmpty = row.every(
+            value =>
+                value === null ||
+                value === undefined ||
+                (typeof value === 'string' && value.trim() === ''),
+        );
 
-    if (isEmpty) {
-      continue;
+        if (isEmpty) {
+            continue;
+        }
+
+        const rowNumber = index + 1;
+
+        sourceRows.push({
+            rowNumber,
+            cells: [...row],
+        });
+
+        const parsedRow = parseExcelLocationRow(row, rowNumber, issues);
+
+        if (parsedRow !== null) {
+            rows.push(parsedRow);
+        }
     }
 
-    const rowNumber = index + 1;
-
-    sourceRows.push({
-      rowNumber,
-      cells: [...row],
-    });
-
-    const parsedRow = parseExcelLocationRow(row, rowNumber, issues);
-
-    if (parsedRow !== null) {
-      rows.push(parsedRow);
+    if (sourceRows.length === 0) {
+        throw new Error('Excel worksheet contains no data rows.');
     }
-  }
 
-  if (sourceRows.length === 0) {
-    throw new Error('Excel worksheet contains no data rows.');
-  }
-
-  return {
-    rows,
-    issues,
-    sourceRows,
-  };
+    return {
+        rows,
+        issues,
+        sourceRows,
+    };
 }
