@@ -283,36 +283,114 @@ export async function readExcelLocationRows(
     const issues: ImportIssue[] = [];
     const sourceRows: ExcelLocationReadResult['sourceRows'] = [];
 
+    const groups = new Map<
+        string,
+        ExcelLocationReadResult['sourceRows']
+    >();
+
+    const normalize = (value: unknown): unknown =>
+        typeof value === 'string' ? value.trim() : value;
+
     for (let index = 1; index < cells.length; index++) {
-        const row = cells[index];
+        const cellsInRow = cells[index];
 
-        const isEmpty = row.every(
-            value =>
-                value === null ||
-                value === undefined ||
-                (typeof value === 'string' && value.trim() === ''),
-        );
-
-        if (isEmpty) {
+        if (cellsInRow.every(isMissing)) {
             continue;
         }
 
-        const rowNumber = index + 1;
+        const sourceRow = {
+            rowNumber: index + 1,
+            cells: [...cellsInRow],
+        };
 
-        sourceRows.push({
-            rowNumber,
-            cells: [...row],
-        });
+        sourceRows.push(sourceRow);
 
-        const parsedRow = parseExcelLocationRow(row, rowNumber, issues);
+        const object = normalize(cellsInRow[3]);
 
-        if (parsedRow !== null) {
-            rows.push(parsedRow);
+        if (typeof object !== 'string' || object === '') {
+            // Collect all cell issues, including the blocking H-code error.
+            parseExcelLocationRow(cellsInRow, sourceRow.rowNumber, issues);
+            continue;
+        }
+
+        const group = groups.get(object);
+
+        if (group) {
+            group.push(sourceRow);
+        } else {
+            groups.set(object, [sourceRow]);
         }
     }
 
     if (sourceRows.length === 0) {
         throw new Error('Excel worksheet contains no data rows.');
+    }
+
+    for (const [hCode, group] of groups) {
+        const first = group[0];
+        const mergedCells = first.cells.map(normalize);
+        const conflictingColumns = new Set<string>();
+
+        for (const source of group.slice(1)) {
+            for (let index = 0; index < EXPECTED_HEADERS.length; index++) {
+                const current = mergedCells[index];
+                const incoming = normalize(source.cells[index]);
+
+                if (isMissing(current)) {
+                    mergedCells[index] = incoming;
+                } else if (!isMissing(incoming) && current !== incoming) {
+                    conflictingColumns.add(EXPECTED_HEADERS[index]);
+                }
+            }
+        }
+
+        if (group.length > 1) {
+            const hasConflict = conflictingColumns.size > 0;
+
+            issues.push({
+                severity: hasConflict ? 'error' : 'warning',
+                code: hasConflict ? 'conflicting_hcode' : 'duplicate_hcode',
+                rowNumber: first.rowNumber,
+                relatedRowNumbers: group.slice(1).map(row => row.rowNumber),
+                hCode,
+                column: 'object',
+                message: hasConflict
+                    ? `Conflicting duplicate rows: ${group
+                        .map(row => row.rowNumber)
+                        .join(', ')}. Different values in: ${[
+                            ...conflictingColumns,
+                        ].join(', ')}.`
+                    : `Duplicate rows: ${group
+                        .map(row => row.rowNumber)
+                        .join(', ')}. Combined into one item.`,
+            });
+        }
+
+        // Validate every original department so merging cannot hide an error.
+        for (const source of group.slice(1)) {
+            const department = normalize(source.cells[5]);
+
+            if (!isMissing(department) && department !== 'BS (NL)') {
+                issues.push({
+                    severity: 'error',
+                    code: 'wrong_department',
+                    rowNumber: source.rowNumber,
+                    hCode,
+                    column: 'department',
+                    message: `Expected "BS (NL)", received "${String(department)}".`,
+                });
+            }
+        }
+
+        const parsedRow = parseExcelLocationRow(
+            mergedCells,
+            first.rowNumber,
+            issues,
+        );
+
+        if (parsedRow !== null) {
+            rows.push(parsedRow);
+        }
     }
 
     return {
