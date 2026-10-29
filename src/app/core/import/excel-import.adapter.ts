@@ -60,6 +60,29 @@ export function mapRowToLocation(
     };
 }
 
+function getArticleKey(row: ExcelLocationRow): string {
+    const article = mapRowToArticle(row, '');
+
+    // Without a name and article number, keep the article item-specific.
+    if (!article.articleName && !article.twelveNcNumber) {
+        return `item-article:${row.object.trim()}`;
+    }
+
+    const categories = article.categories
+        ? [...new Set(article.categories)].sort()
+        : null;
+
+    return `article:${JSON.stringify([
+        article.articleName,
+        article.twelveNcNumber,
+        article.customerName,
+        article.length,
+        article.width,
+        article.unit,
+        categories,
+    ])}`;
+}
+
 export function mapRowsToImportResult(
     rows: ExcelLocationRow[],
 ): ExcelImportResult {
@@ -81,9 +104,11 @@ export function mapRowsToImportResult(
         }
 
         // Temporary identity per item until article grouping is implemented.
-        const articleId = `item-article:${hCode}`;
+        const articleId = getArticleKey(row);
 
-        articles.set(articleId, mapRowToArticle(row, articleId));
+        if (!articles.has(articleId)) {
+            articles.set(articleId, mapRowToArticle(row, articleId));
+        }
 
         if (locationCode && !locations.has(locationCode)) {
             locations.set(locationCode, mapRowToLocation(row));
