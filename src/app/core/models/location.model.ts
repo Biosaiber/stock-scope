@@ -1,6 +1,6 @@
 export interface Location {
     code: string;
-    department: string; 
+    department: string | null;
     length: number | null;
     width: number | null;
     height: number | null;

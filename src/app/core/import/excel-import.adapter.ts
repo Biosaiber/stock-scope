@@ -6,20 +6,18 @@ import type { ExcelImportResult } from "./excel-import-result.model";
 import type { ExcelLocationRow } from "./excel-location-row.model";
 
 
-//Item
 export function mapRowToItem(
-  row: ExcelLocationRow,
-  articleId: string,
+    row: ExcelLocationRow,
+    articleId: string,
 ): Item {
-  return {
-    hCode: row.object.trim(),
-    articleId,
-    locationCode: row.location.trim(),
-    status: row.status?.trim() || null,
-  };
+    return {
+        hCode: row.object.trim(),
+        articleId,
+        locationCode: row.location?.trim() || null,
+        status: row.status?.trim() || null,
+    };
 }
 
-//Article
 export function mapRowToArticle(
     row: ExcelLocationRow,
     articleId: string,
@@ -31,25 +29,29 @@ export function mapRowToArticle(
 
     return {
         id: articleId,
-        articleName: row.description.trim(),
-        twelveNcNumber: row.articleNrCustomer.trim(),
-        customerName: row.customer.trim(),
+        articleName: row.description?.trim() || null,
+        twelveNcNumber: row.articleNrCustomer?.trim() || null,
+        customerName: row.customer?.trim() || null,
         length: row.length,
         width: row.width,
-        unit: row.unit.trim() || null,
+        unit: row.unit?.trim() || null,
         categories: categories?.length ? categories : null,
         relatedArticleIds: null,
     };
-
 }
 
-//Location
 export function mapRowToLocation(
     row: ExcelLocationRow,
 ): Location {
+    const code = row.location?.trim();
+
+    if (!code) {
+        throw new Error('Cannot create a location without a code.');
+    }
+
     return {
-        code: row.location.trim(),
-        department: row.department.trim(),
+        code,
+        department: row.department?.trim() || null,
         length: null,
         width: null,
         height: null,
@@ -58,7 +60,6 @@ export function mapRowToLocation(
     };
 }
 
-//Import result
 export function mapRowsToImportResult(
     rows: ExcelLocationRow[],
 ): ExcelImportResult {
@@ -68,31 +69,24 @@ export function mapRowsToImportResult(
     const seenHCodes = new Set<string>();
 
     for (const row of rows) {
-        const articleId = row.description.trim();
-        const locationCode = row.location.trim();
         const hCode = row.object.trim();
+        const locationCode = row.location?.trim() || null;
 
-        if (!articleId) {
-            throw new Error(`Missing article description for item "${row.object}".`);
-        }
-
-        if (!locationCode) {
-            throw new Error(`Missing location for item "${row.object}".`);
-        }
-
-        if (!articles.has(articleId)) {
-            articles.set(articleId, mapRowToArticle(row, articleId));
-        }
-
-        if (!locations.has(locationCode)) {
-            locations.set(locationCode, mapRowToLocation(row));
-        }
         if (!hCode) {
             throw new Error('Missing item H-code.');
         }
 
         if (seenHCodes.has(hCode)) {
             throw new Error(`Duplicate item H-code "${hCode}".`);
+        }
+
+        // Temporary identity per item until article grouping is implemented.
+        const articleId = `item-article:${hCode}`;
+
+        articles.set(articleId, mapRowToArticle(row, articleId));
+
+        if (locationCode && !locations.has(locationCode)) {
+            locations.set(locationCode, mapRowToLocation(row));
         }
 
         items.push(mapRowToItem(row, articleId));
@@ -105,5 +99,3 @@ export function mapRowsToImportResult(
         locations: Array.from(locations.values()),
     };
 }
-
-
