@@ -39,13 +39,24 @@ export class App {
         this.confirmedImport()?.fileFingerprint
       ) {
         this.importPreview.set(null);
+
         this.importError.set(
           'This report is already loaded. No data was changed.',
         );
 
         return;
       }
+      if (
+        result.dataFingerprint ===
+        this.confirmedImport()?.dataFingerprint
+      ) {
+        this.importPreview.set(null);
+        this.importError.set(
+          'This report contains the same data as the loaded report. No data was changed.',
+        );
 
+        return;
+      }
       this.importPreview.set(result);
     } catch (error: unknown) {
       this.importError.set(
