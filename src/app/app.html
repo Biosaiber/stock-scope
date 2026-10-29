@@ -61,4 +61,36 @@
     </button>
   </section>
   }
+  @if (confirmedImport(); as imported) {
+  <section>
+    <h2>Imported data issues</h2>
+
+    <p>
+      Imported items: {{ imported.rows.length }}
+      — Issues: {{ imported.issues.length }}
+    </p>
+
+    @if (imported.issues.length > 0) {
+    <details>
+      <summary>Show issues</summary>
+
+      <ul>
+        @for (issue of imported.issues; track $index) {
+        <li>
+          Row {{ issue.rowNumber }}
+
+          @if (issue.hCode) {
+          — {{ issue.hCode }}
+          }
+
+          — {{ issue.column }}: {{ issue.message }}
+        </li>
+        }
+      </ul>
+    </details>
+    } @else {
+    <p>No issues found.</p>
+    }
+  </section>
+  }
 </main>

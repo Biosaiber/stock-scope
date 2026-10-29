@@ -12,6 +12,7 @@ export class App {
   protected readonly isImporting = signal(false);
   protected readonly importResult = signal<ExcelImportResult | null>(null);
   protected readonly importPreview = signal<Awaited<ReturnType<typeof importExcel>> | null>(null);
+  protected readonly confirmedImport = signal<Awaited<ReturnType<typeof importExcel>> | null>(null);
   protected readonly hasBlockingIssues = computed(() => {
     const preview = this.importPreview();
     return preview?.issues.some(issue => issue.severity === 'error') ?? false;
@@ -55,6 +56,7 @@ export class App {
       const result = mapRowsToImportResult(preview.rows);
 
       this.importResult.set(result);
+      this.confirmedImport.set(preview);
       this.importPreview.set(null);
     } catch (error: unknown) {
       this.importError.set(
