@@ -89,78 +89,82 @@ export interface ImportIssue {
     message: string;
 }
 
-function readRequiredText(
-    value: unknown,
-    column: string,
-    rowNumber: number,
-    issues: ImportIssue[],
-): string | null {
-    if (typeof value !== 'string' || value.trim() === '') {
-        issues.push({
-            severity: 'error',
-            code:
-                value === null ||
-                    value === undefined ||
-                    (typeof value === 'string' && value.trim() === '')
-                    ? 'missing_value'
-                    : 'invalid_value',
-            rowNumber,
-            column,
-            message: 'Missing or invalid text.',
-        });
+type CellIssueOptions = {
+    rowNumber: number;
+    column: string;
+    issues: ImportIssue[];
+    hCode?: string;
+    missingSeverity?: ImportIssue['severity'];
+};
 
+function addCellIssue(
+    options: CellIssueOptions,
+    code: 'missing_value' | 'invalid_value',
+): void {
+    const severity =
+        code === 'missing_value'
+            ? options.missingSeverity
+            : options.column === 'object'
+                ? 'error'
+                : 'warning';
+
+    if (!severity) {
+        return;
+    }
+
+    options.issues.push({
+        severity,
+        code,
+        rowNumber: options.rowNumber,
+        hCode: options.hCode,
+        column: options.column,
+        message:
+            code === 'missing_value'
+                ? 'Missing value.'
+                : 'Invalid value.',
+    });
+}
+
+function isMissing(value: unknown): boolean {
+    return (
+        value === null ||
+        value === undefined ||
+        (typeof value === 'string' && value.trim() === '')
+    );
+}
+
+function readText(
+    value: unknown,
+    options: CellIssueOptions,
+): string | null {
+    if (isMissing(value)) {
+        addCellIssue(options, 'missing_value');
+        return null;
+    }
+
+    if (typeof value !== 'string') {
+        addCellIssue(options, 'invalid_value');
         return null;
     }
 
     return value.trim();
 }
 
-function readOptionalText(
+function readNumber(
     value: unknown,
-    column: string,
-    rowNumber: number,
-): string | null {
-    if (value === null || value === undefined) {
+    options: CellIssueOptions,
+): number | null {
+    if (isMissing(value)) {
+        addCellIssue(options, 'missing_value');
         return null;
     }
 
-    if (typeof value !== 'string') {
-        throw new Error(
-            `Row ${rowNumber}: invalid text in "${column}".`,
-        );
-    }
-
-    return value.trim() || null;
-}
-
-function readRequiredNumber(
-    value: unknown,
-    column: string,
-    rowNumber: number,
-): number {
     if (typeof value !== 'number' || !Number.isFinite(value)) {
-        throw new Error(
-            `Row ${rowNumber}: missing or invalid number in "${column}".`,
-        );
+        addCellIssue(options, 'invalid_value');
+        return null;
     }
 
     return value;
-}
-
-function readOptionalNumber(
-    value: unknown,
-    column: string,
-    rowNumber: number,
-): number | null {
-    if (
-        value === null ||
-        value === undefined ||
-        (typeof value === 'string' && value.trim() === '')
-    ) {
-        return null;
-    }
-
-    return readRequiredNumber(value, column, rowNumber);
 }
 
 export function parseExcelLocationRow(
@@ -168,29 +172,66 @@ export function parseExcelLocationRow(
     rowNumber: number,
     issues: ImportIssue[],
 ): ExcelLocationRow | null {
-    const customer = readRequiredText(cells[0], 'customer', rowNumber, issues);
-    const description = readRequiredText(cells[1], 'description', rowNumber, issues);
-    const articleNrCustomer = readRequiredText(
-        cells[2], 'articleNrCustomer', rowNumber, issues,
-    );
-    const object = readRequiredText(cells[3], 'object', rowNumber, issues);
-    const department = readRequiredText(cells[5], 'department', rowNumber, issues);
-    const location = readRequiredText(cells[6], 'location', rowNumber, issues);
-    const level = readRequiredText(cells[7], 'level', rowNumber, issues);
-    const unit = readRequiredText(cells[10], 'unit', rowNumber, issues);
-    const entity = readRequiredText(cells[14], 'entity', rowNumber, issues);
+    const object = readText(cells[3], {
+        rowNumber,
+        column: 'object',
+        issues,
+        missingSeverity: 'error',
+    });
 
-    if (
-        customer === null ||
-        description === null ||
-        articleNrCustomer === null ||
-        object === null ||
-        department === null ||
-        location === null ||
-        level === null ||
-        unit === null ||
-        entity === null
-    ) {
+    const text = (
+        index: number,
+        column: string,
+        missingSeverity?: ImportIssue['severity'],
+    ): string | null =>
+        readText(cells[index], {
+            rowNumber,
+            column,
+            issues,
+            hCode: object ?? undefined,
+            missingSeverity,
+        });
+
+    const number = (
+        index: number,
+        column: string,
+        missingSeverity?: ImportIssue['severity'],
+    ): number | null =>
+        readNumber(cells[index], {
+            rowNumber,
+            column,
+            issues,
+            hCode: object ?? undefined,
+            missingSeverity,
+        });
+
+    const customer = text(0, 'customer');
+    const description = text(1, 'description', 'warning');
+    const articleNrCustomer = text(2, 'articleNrCustomer', 'warning');
+    const objectDescription = text(4, 'object description');
+    const department = text(5, 'department');
+    const location = text(6, 'location', 'warning');
+    const level = text(7, 'level');
+    const length = number(8, 'length');
+    const width = number(9, 'width');
+    const unit = text(10, 'unit');
+    const status = text(11, 'status', 'warning');
+    const amount = number(12, 'amount', 'warning');
+    const kinds = text(13, 'kinds');
+    const entity = text(14, 'entity');
+
+    if (department !== null && department !== 'BS (NL)') {
+        issues.push({
+            severity: 'error',
+            code: 'wrong_department',
+            rowNumber,
+            hCode: object ?? undefined,
+            column: 'department',
+            message: `Expected "BS (NL)", received "${department}".`,
+        });
+    }
+
+    if (object === null) {
         return null;
     }
 
@@ -199,22 +240,19 @@ export function parseExcelLocationRow(
         description,
         articleNrCustomer,
         object,
-        'object description': readOptionalText(
-            cells[4], 'object description', rowNumber,
-        ),
+        'object description': objectDescription,
         department,
         location,
         level,
-        length: readOptionalNumber(cells[8], 'length', rowNumber),
-        width: readOptionalNumber(cells[9], 'width', rowNumber),
+        length,
+        width,
         unit,
-        status: readOptionalText(cells[11], 'status', rowNumber),
-        amount: readRequiredNumber(cells[12], 'amount', rowNumber),
-        kinds: readOptionalText(cells[13], 'kinds', rowNumber),
+        status,
+        amount,
+        kinds,
         entity,
     };
 }
-
 export interface ExcelLocationReadResult {
     rows: ExcelLocationRow[];
     issues: ImportIssue[];

@@ -38,8 +38,13 @@
       @for (issue of preview.issues; track $index) {
       <li>
         {{ issue.severity === 'error' ? 'Error' : 'Warning' }} —
-        Row {{ issue.rowNumber }} —
-        {{ issue.column }}: {{ issue.message }}
+        Row {{ issue.rowNumber }}
+
+        @if (issue.hCode) {
+        — {{ issue.hCode }}
+        }
+
+        — {{ issue.column }}: {{ issue.message }}
       </li>
       }
     </ul>
