@@ -1,5 +1,5 @@
 import { utils, write } from 'xlsx';
-import { readExcelLocationRows } from './excel-import.reader';
+import { readExcelLocationRows, validateExcelHeaders } from './excel-import.reader';
 
 const HEADERS = [
     'customer',
@@ -131,4 +131,77 @@ describe('Excel import reader', () => {
         expect(result.sourceRows[0].cells[6]).toBe('BS-A01');
         expect(result.sourceRows[1].cells[6]).toBe('BS-A02');
     });
+
+    it('should preserve an incomplete item with warnings', async () => {
+        const cells = createCells();
+
+        cells[0] = null;  // customer: no warning
+        cells[1] = null;  // description: warning
+        cells[6] = null;  // location: warning
+        cells[11] = null; // status: warning
+
+        const result = await readExcelLocationRows(
+            createExcelFile([cells]),
+        );
+
+        expect(result.rows.length).toBe(1);
+        expect(result.rows[0].customer).toBeNull();
+        expect(result.rows[0].description).toBeNull();
+        expect(result.rows[0].location).toBeNull();
+        expect(result.rows[0].status).toBeNull();
+
+        expect(result.issues.map(issue => issue.column).sort())
+            .toEqual(['description', 'location', 'status']);
+
+        expect(result.issues.every(issue => issue.severity === 'warning'))
+            .toBeTrue();
+    });
+
+    it('should report a missing H-code as a blocking error', async () => {
+        const cells = createCells();
+        cells[3] = '   ';
+
+        const result = await readExcelLocationRows(
+            createExcelFile([cells]),
+        );
+
+        expect(result.rows.length).toBe(0);
+        expect(result.sourceRows.length).toBe(1);
+
+        expect(result.issues).toContain(
+            jasmine.objectContaining({
+                severity: 'error',
+                code: 'missing_value',
+                column: 'object',
+                rowNumber: 2,
+            }),
+        );
+    });
+
+    it('should report a different department as a blocking error', async () => {
+        const cells = createCells();
+        cells[5] = 'RUN (NL)';
+
+        const result = await readExcelLocationRows(
+            createExcelFile([cells]),
+        );
+
+        expect(result.issues).toContain(
+            jasmine.objectContaining({
+                severity: 'error',
+                code: 'wrong_department',
+                hCode: 'H001',
+                column: 'department',
+            }),
+        );
+    });
+
+    it('should reject an unexpected report header', () => {
+        const headers = [...HEADERS];
+        headers[3] = 'wrong-column';
+
+        expect(() => validateExcelHeaders(headers))
+            .toThrowError('Invalid header in column 4: expected "object".');
+    });
+
 });
