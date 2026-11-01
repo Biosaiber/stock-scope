@@ -1,8 +1,8 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { importExcel } from './core/import/excel-import';
-import type { ExcelImportResult } from './core/import/excel-import-result.model';
 import { mapRowsToImportResult } from './core/import/excel-import.adapter';
 import { ItemsComponent } from './features/items/items.component';
+import { WarehouseDataService } from './core/services/warehouse-data.service';
 
 @Component({
   selector: 'app-root',
@@ -11,10 +11,15 @@ import { ItemsComponent } from './features/items/items.component';
   styleUrl: './app.css',
 })
 export class App {
+  protected readonly warehouseData = inject(WarehouseDataService);
   protected readonly isImporting = signal(false);
-  protected readonly importResult = signal<ExcelImportResult | null>(null);
+  protected readonly importResult = computed(
+    () => this.warehouseData.confirmedImport()?.data ?? null,
+  );
   protected readonly importPreview = signal<Awaited<ReturnType<typeof importExcel>> | null>(null);
-  protected readonly confirmedImport = signal<Awaited<ReturnType<typeof importExcel>> | null>(null);
+  protected readonly confirmedImport = computed(
+    () => this.warehouseData.confirmedImport()?.source ?? null,
+  );
   protected readonly hasBlockingIssues = computed(() => {
     const preview = this.importPreview();
     return preview?.issues.some(issue => issue.severity === 'error') ?? false;
@@ -97,8 +102,10 @@ export class App {
     try {
       const result = mapRowsToImportResult(preview.rows);
 
-      this.importResult.set(result);
-      this.confirmedImport.set(preview);
+      this.warehouseData.confirmImport({
+        source: preview,
+        data: result,
+      });
       this.importPreview.set(null);
     } catch (error: unknown) {
       this.importError.set(
