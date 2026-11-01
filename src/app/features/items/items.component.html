@@ -1,1 +1,29 @@
-<p>items works!</p>
+<h2>Items</h2>
+<p>Loaded items: {{ items().length }}</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>H-code</th>
+            <th>Article</th>
+            <th>Status</th>
+            <th>Location</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @for (item of items(); track item.hCode) {
+        <tr>
+            <td>{{ item.hCode }}</td>
+            <td>  {{ articlesById().get(item.articleId)?.articleName ?? 'Unknown' }}</td>
+
+            <td>{{ item.status ?? 'Unknown' }}</td>
+            <td>{{ item.locationCode ?? 'Unknown' }}</td>
+        </tr>
+        } @empty {
+        <tr>
+            <td colspan="4">No items loaded. Confirm an import first.</td>
+        </tr>
+        }
+    </tbody>
+</table>
