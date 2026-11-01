@@ -34,6 +34,22 @@ export class App {
     try {
       const result = await importExcel(file);
 
+      const currentReportDate = this.confirmedImport()?.reportDate;
+
+      if (
+        result.reportDate &&
+        currentReportDate &&
+        result.reportDate < currentReportDate
+      ) {
+        this.importError.set(
+          `Older report rejected (${result.reportDate}). ` +
+          `The loaded report is dated ${currentReportDate}. ` +
+          'No data was changed.',
+        );
+
+        return;
+      }
+
       if (
         result.fileFingerprint ===
         this.confirmedImport()?.fileFingerprint

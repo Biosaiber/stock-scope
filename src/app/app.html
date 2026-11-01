@@ -29,6 +29,25 @@
   <section>
     <h2>Import preview</h2>
 
+    <p>
+      Loaded report date:
+      {{ confirmedImport()?.reportDate ?? 'Unknown' }}
+    </p>
+
+    <p>
+      Selected report date:
+      {{ preview.reportDate ?? 'Unknown' }}
+    </p>
+
+    @if (preview.reportDate) {
+    <p>Report date from filename: {{ preview.reportDate }}</p>
+    } @else {
+    <p>
+      Warning: Report date could not be determined from the filename.
+      Its age cannot be verified.
+    </p>
+    }
+
     <p>Data rows: {{ preview.sourceRows.length }}</p>
     <p>Rows passing validation: {{ preview.rows.length }}</p>
     <p>Issues found: {{ preview.issues.length }}</p>
