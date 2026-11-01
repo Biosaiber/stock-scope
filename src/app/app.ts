@@ -1,12 +1,112 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, signal, computed } from '@angular/core';
+import { importExcel } from './core/import/excel-import';
+import type { ExcelImportResult } from './core/import/excel-import-result.model';
+import { mapRowsToImportResult } from './core/import/excel-import.adapter';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('stock-scope');
+  protected readonly isImporting = signal(false);
+  protected readonly importResult = signal<ExcelImportResult | null>(null);
+  protected readonly importPreview = signal<Awaited<ReturnType<typeof importExcel>> | null>(null);
+  protected readonly confirmedImport = signal<Awaited<ReturnType<typeof importExcel>> | null>(null);
+  protected readonly hasBlockingIssues = computed(() => {
+    const preview = this.importPreview();
+    return preview?.issues.some(issue => issue.severity === 'error') ?? false;
+  });
+  protected readonly importError = signal<string | null>(null);
+
+  protected async onFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file || this.isImporting()) {
+      return;
+    }
+
+    this.isImporting.set(true);
+    this.importError.set(null);
+    this.importPreview.set(null);
+
+    try {
+      const result = await importExcel(file);
+
+      const currentReportDate = this.confirmedImport()?.reportDate;
+
+      if (
+        result.reportDate &&
+        currentReportDate &&
+        result.reportDate < currentReportDate
+      ) {
+        this.importError.set(
+          `Older report rejected (${result.reportDate}). ` +
+          `The loaded report is dated ${currentReportDate}. ` +
+          'No data was changed.',
+        );
+
+        return;
+      }
+
+      if (
+        result.fileFingerprint ===
+        this.confirmedImport()?.fileFingerprint
+      ) {
+        this.importPreview.set(null);
+
+        this.importError.set(
+          'This report is already loaded. No data was changed.',
+        );
+
+        return;
+      }
+      if (
+        result.dataFingerprint ===
+        this.confirmedImport()?.dataFingerprint
+      ) {
+        this.importPreview.set(null);
+        this.importError.set(
+          'This report contains the same data as the loaded report. No data was changed.',
+        );
+
+        return;
+      }
+      this.importPreview.set(result);
+    } catch (error: unknown) {
+      this.importError.set(
+        error instanceof Error ? error.message : 'Excel import failed.',
+      );
+    } finally {
+      this.isImporting.set(false);
+      input.value = '';
+    }
+  }
+  protected confirmImport(): void {
+    const preview = this.importPreview();
+
+    if (!preview || this.hasBlockingIssues()) {
+      return;
+    }
+
+    this.importError.set(null);
+
+    try {
+      const result = mapRowsToImportResult(preview.rows);
+
+      this.importResult.set(result);
+      this.confirmedImport.set(preview);
+      this.importPreview.set(null);
+    } catch (error: unknown) {
+      this.importError.set(
+        error instanceof Error ? error.message : 'Excel import failed.',
+      );
+    }
+  }
+
+  protected cancelImport(): void {
+    this.importPreview.set(null);
+    this.importError.set(null);
+  }
 }

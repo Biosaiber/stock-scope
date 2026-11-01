@@ -2392,22 +2392,179 @@ The page can also display information about the latest successful import, includ
 
 ### File Validation
 
-StockScope should validate the file before allowing an import.
+StockScope imports the Location Report for department `BS (NL)`.
 
-The initial validation should verify that:
+Validation distinguishes blocking errors from non-blocking warnings.
+Incomplete warehouse records should remain visible so users can identify
+and resolve data issues.
 
-- the file can be read
-- the file is a supported Excel file
-- the expected Location Report structure exists
-- required columns are present
+The report must contain the expected 15 columns in this order:
 
-If required data or columns are missing, the import should be blocked.
+customer, description, articleNrCustomer, object, object description,
+department, location, level, length, width, unit, status, amount, kinds,
+entity.
 
-For example:
+#### Blocking Errors
 
-`Missing required column: location`
+Import confirmation is blocked when:
 
-In this situation, `Confirm Import` should not be available.
+- the file or worksheet cannot be read
+- the worksheet contains no data rows
+- headers do not match the expected structure and order
+- an Item identifier in `object` is missing or is not text
+- a populated department differs from `BS (NL)`
+- duplicate identifiers contain conflicting populated values
+
+Completely empty rows are ignored.
+
+Item identifiers are treated as text. They are not restricted to an
+`H` prefix or a fixed number of characters.
+
+#### Missing and Invalid Values
+
+Missing values are stored as `null`. Interfaces should display an
+appropriate fallback such as `Unknown`; fallback labels must not become
+identifiers or stored source values.
+
+| Missing field | Behaviour |
+| --- | --- |
+| description | Warning |
+| articleNrCustomer | Warning |
+| location | Warning |
+| status | Warning |
+| amount | Warning |
+| customer | Null without a missing-value warning |
+| object description | Null without a missing-value warning |
+| department | Null without a missing-value warning |
+| level | Null without a missing-value warning |
+| length | Null without a missing-value warning |
+| width | Null without a missing-value warning |
+| unit | Null without a missing-value warning |
+| kinds | Null without a missing-value warning |
+| entity | Null without a missing-value warning |
+
+Populated values of an invalid type generate a warning, except for an
+invalid Item identifier, which generates a blocking error.
+
+Length, width and amount must be finite numbers greater than zero.
+Invalid numeric values generate warnings and become `null` in the
+prepared data. Original source cells remain available for inspection.
+
+Missing or unusable dimensions must not be treated as zero occupied
+area. Occupancy calculations must indicate incomplete measurement data
+when applicable.
+
+#### Duplicate Item Identifiers
+
+Rows are grouped by their trimmed Item identifier before mapping.
+
+- Identical duplicates produce one Item and a duplicate warning.
+- Compatible duplicates may fill empty cells from another source row.
+- Different populated values produce a blocking conflict.
+- Duplicate quantities are not added together.
+- Original source rows and their row numbers are retained.
+
+Duplicate comparison uses source cell values before numeric validation,
+so different invalid values are not silently collapsed into equal nulls.
+
+#### Repeated Reports and Report Dates
+
+StockScope compares an uploaded report with the currently confirmed
+report using:
+
+- a SHA-256 fingerprint of the complete file
+- a SHA-256 fingerprint of normalized source rows
+
+Data normalization trims surrounding text whitespace, represents empty
+cells as null and ignores row order. Duplicate source rows remain part
+of the fingerprint.
+
+An identical file or unchanged normalized data does not replace the
+current warehouse state.
+
+The date in `report_location_YYMMDD.xlsx` is used as a filename-based
+safeguard. Supported filename suffixes include a four-digit time and
+download copy numbers such as `(1)`.
+
+A report dated before the currently confirmed report is rejected.
+Different data from the same day can be previewed and confirmed because
+its chronological order cannot be reliably established.
+
+An unrecognized or invalid filename date produces a visible warning
+that report age cannot be verified.
+
+Filename dates can be changed by renaming a file. They are not proof of
+data freshness. Workbook creation metadata and download copy numbers
+are not used to establish chronological order.
+
+### Article Grouping and Identity
+
+The current adapter groups Items under a shared Article only when
+all of these prepared Article properties match:
+
+- article name
+- customer article number
+- customer name
+- length
+- width
+- unit
+- categories
+
+Category order and repeated category names do not affect grouping.
+
+Articles with different properties remain separate, even when they
+share the same name or customer article number. This prevents the
+first encountered record from overwriting different Article data.
+
+When both article name and customer article number are missing, the
+adapter creates an Item-specific Article key based on the Item identifier.
+
+Current Article keys are derived from content. They may change when
+Article properties are corrected in a later report.
+
+These keys are not yet stable cross-import Article identifiers.
+Before persistent Push Article configuration, Article relations or
+Article-level annotations depend on them, StockScope must introduce
+a stable identity or an explicit reconciliation strategy.
+
+### Current Import Implementation Status
+
+The current implementation provides:
+
+- Location Report reading and header validation
+- cell validation with blocking errors and non-blocking warnings
+- preservation of incomplete Items
+- compatible duplicate merging and conflicting duplicate detection
+- import preview, confirmation and cancellation
+- mapping to Item, Article and Location models
+- retention of confirmed import issues and original source rows
+- identical-file and unchanged-data detection
+- rejection of older report days based on supported filename dates
+
+The current confirmed data, source rows, issues and fingerprints are
+held in application memory. Reloading the application clears them.
+
+The following capabilities remain planned and are not implemented
+by the current import adapter:
+
+- persistent storage and restoration of confirmed imports
+- archival of original Excel files
+- recording and displaying the confirmation timestamp
+- Warehouse Snapshot Summaries and Location Snapshots
+- historical import storage
+- Review generation and reconciliation
+- occupancy calculations and measurement-completeness indicators
+- current-versus-preview change summaries and large-change warnings
+- reliable chronological ordering of different reports from the same day
+- stable cross-import Article identity
+
+Sections describing persistence, snapshots, Review reconciliation and
+historical trends define the target Phase 1 behaviour, not completed
+functionality.
+
+Until persistent storage is implemented, confirmation replaces the
+active in-memory dataset. Failed or cancelled imports preserve the
+previously confirmed in-memory dataset.
 
 ### Import Preview
 
