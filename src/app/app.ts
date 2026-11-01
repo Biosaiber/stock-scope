@@ -2,10 +2,12 @@ import { Component, signal, computed } from '@angular/core';
 import { importExcel } from './core/import/excel-import';
 import type { ExcelImportResult } from './core/import/excel-import-result.model';
 import { mapRowsToImportResult } from './core/import/excel-import.adapter';
+import { ItemsComponent } from './features/items/items.component';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
+  imports: [ItemsComponent],
   styleUrl: './app.css',
 })
 export class App {
