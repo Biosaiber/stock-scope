@@ -11,7 +11,9 @@ export class ItemsComponent {
 
   private readonly warehouseData = inject(WarehouseDataService);
   protected readonly search = signal('');
-  
+  protected readonly selectedArticleId = signal('');
+  protected readonly selectedStatus = signal('');
+  protected readonly selectedLocation = signal('');
 
   protected readonly items = computed(
     () => this.warehouseData.confirmedImport()?.data.items ?? [],
@@ -25,8 +27,43 @@ export class ItemsComponent {
   });
 
   protected readonly filteredItems = computed(() => {
-    const query = this.search().trim().toLocaleUpperCase();
+    const query = this.search().trim().toUpperCase();
+    const articleId = this.selectedArticleId();
+    const status = this.selectedStatus();
+    const location = this.selectedLocation();
 
-    return this.items().filter( item => item.hCode.toUpperCase().includes(query));
-  })
+    return this.items().filter(item => {
+      const matchesSearch =
+        item.hCode.toUpperCase().includes(query);
+
+      const matchesArticle =
+        articleId === '' || item.articleId === articleId;
+
+      const matchesStatus =
+        status === '' || item.status === status;
+
+      const matchesLocation =
+        location === '' || item.locationCode === location;
+
+      return (
+        matchesSearch &&
+        matchesArticle &&
+        matchesStatus &&
+        matchesLocation
+      );
+    });
+  });
+
+  protected readonly availableStatuses = computed(() => {
+    const statuses = this.items()
+      .map(item => item.status)
+      .filter((status): status is string =>
+        status !== null &&
+        status !== undefined &&
+        status !== ''
+      );
+
+    return [...new Set(statuses)]
+      .sort((a, b) => a.localeCompare(b));
+  });
 }
