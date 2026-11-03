@@ -11,7 +11,7 @@ export class ItemsComponent {
 
   private readonly warehouseData = inject(WarehouseDataService);
   protected readonly search = signal('');
-  protected readonly selectedArticleId = signal('');
+  protected readonly articleSearch = signal('');
   protected readonly selectedStatus = signal('');
   protected readonly selectedLocation = signal('');
 
@@ -28,7 +28,8 @@ export class ItemsComponent {
 
   protected readonly filteredItems = computed(() => {
     const query = this.search().trim().toUpperCase();
-    const articleId = this.selectedArticleId();
+    const articleQuery = this.articleSearch().trim().toUpperCase();
+    const articles = this.articlesById();
     const status = this.selectedStatus();
     const location = this.selectedLocation();
 
@@ -36,8 +37,11 @@ export class ItemsComponent {
       const matchesSearch =
         item.hCode.toUpperCase().includes(query);
 
+      const articleName =
+        articles.get(item.articleId)?.articleName ?? '';
+
       const matchesArticle =
-        articleId === '' || item.articleId === articleId;
+        articleName.toUpperCase().includes(articleQuery);
 
       const matchesStatus =
         status === '' || item.status === status;
@@ -66,4 +70,21 @@ export class ItemsComponent {
     return [...new Set(statuses)]
       .sort((a, b) => a.localeCompare(b));
   });
+
+  protected readonly availableArticles = computed(() => {
+    const articles = [...this.articlesById().values()];
+
+    return articles.sort((a, b) =>
+      (a.articleName ?? '').localeCompare(b.articleName ?? '')
+    );
+  });
 }
+
+
+
+/*   protected readonly articlesById = computed(() => {
+    const articles =
+      this.warehouseData.confirmedImport()?.data.articles ?? [];
+
+    return new Map(articles.map(article => [article.id, article]));
+  }); */

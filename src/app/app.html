@@ -26,58 +26,95 @@
   }
 
   @if (importPreview(); as preview) {
-  <section>
-    <h2>Import preview</h2>
+  <section class="import-preview">
+    <header class="preview-header">
+      <h2>Import preview</h2>
+      <p>Review the report before confirming the import.</p>
+    </header>
 
-    <p>
-      Loaded report date:
-      {{ confirmedImport()?.reportDate ?? 'Unknown' }}
-    </p>
+    <div class="preview-content">
+      <div class="report-dates">
+        <div>
+          <span class="field-label">Loaded report date</span>
+          <strong>{{ confirmedImport()?.reportDate ?? 'Unknown' }}</strong>
+        </div>
 
-    <p>
-      Selected report date:
-      {{ preview.reportDate ?? 'Unknown' }}
-    </p>
+        <div>
+          <span class="field-label">Selected report date</span>
+          <strong>{{ preview.reportDate ?? 'Unknown' }}</strong>
+        </div>
+      </div>
 
-    @if (preview.reportDate) {
-    <p>Report date from filename: {{ preview.reportDate }}</p>
-    } @else {
-    <p>
-      Warning: Report date could not be determined from the filename.
-      Its age cannot be verified.
-    </p>
-    }
-
-    <p>Data rows: {{ preview.sourceRows.length }}</p>
-    <p>Rows passing validation: {{ preview.rows.length }}</p>
-    <p>Issues found: {{ preview.issues.length }}</p>
-
-    @if (preview.issues.length > 0) {
-    <ul>
-      @for (issue of preview.issues; track $index) {
-      <li>
-        {{ issue.severity === 'error' ? 'Error' : 'Warning' }} —
-        Row {{ issue.rowNumber }}
-
-        @if (issue.hCode) {
-        — {{ issue.hCode }}
-        }
-
-        — {{ issue.column }}: {{ issue.message }}
-      </li>
+      @if (!preview.reportDate) {
+      <p class="preview-warning">
+        Report date could not be determined from the filename.
+        Its age cannot be verified.
+      </p>
       }
-    </ul>
-    } @else {
-    <p>No issues found in the current validation.</p>
-    }
 
-    <button type="button" (click)="confirmImport()" [disabled]="hasBlockingIssues() || isImporting()">
-      Confirm import
-    </button>
+      <dl class="preview-stats">
+        <div>
+          <dt>Data rows</dt>
+          <dd>{{ preview.sourceRows.length }}</dd>
+        </div>
 
-    <button type="button" (click)="cancelImport()">
-      Cancel
-    </button>
+        <div>
+          <dt>Rows passing validation</dt>
+          <dd>{{ preview.rows.length }}</dd>
+        </div>
+
+        <div>
+          <dt>Issues found</dt>
+          <dd>{{ preview.issues.length }}</dd>
+        </div>
+      </dl>
+
+      <h3 id="preview-issues-heading">
+        Validation issues ({{ preview.issues.length }})
+      </h3>
+
+      @if (preview.issues.length > 0) {
+      <div class="issues-scroll" role="region" aria-labelledby="preview-issues-heading" tabindex="0">
+        <ul class="issues-list">
+          @for (issue of preview.issues; track $index) {
+          <li class="issue" [class.issue-error]="issue.severity === 'error'">
+            <div class="issue-meta">
+              <span class="issue-badge">
+                {{ issue.severity === 'error' ? 'Error' : 'Warning' }}
+              </span>
+
+              <span>Row {{ issue.rowNumber }}</span>
+
+              @if (issue.hCode) {
+              <strong>{{ issue.hCode }}</strong>
+              }
+            </div>
+
+            <p>
+              <strong>{{ issue.column }}:</strong>
+              {{ issue.message }}
+            </p>
+          </li>
+          }
+        </ul>
+      </div>
+      } @else {
+      <p class="preview-success">
+        No issues found in the current validation.
+      </p>
+      }
+
+      <div class="preview-actions">
+        <button class="preview-button preview-button-primary" type="button" (click)="confirmImport()"
+          [disabled]="hasBlockingIssues() || isImporting()">
+          Confirm import
+        </button>
+
+        <button class="preview-button preview-button-secondary" type="button" (click)="cancelImport()">
+          Cancel
+        </button>
+      </div>
+    </div>
   </section>
   }
   @if (confirmedImport(); as imported) {

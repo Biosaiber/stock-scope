@@ -12,9 +12,15 @@
             <th><label for="item-search">Search by H-code</label>
 
                 <input id="item-search" #searchInput type="search" placeholder="Enter H-code..." [value]="search()"
-                    (input)="search.set(searchInput.value)" /></th>
-            <th>Article</th>
-            <th>                <label for="status-filter">Status</label>
+                    (input)="search.set(searchInput.value)" />
+            </th>
+            <th>
+                <label for="article-search">Article</label>
+
+                <input id="article-search" #articleInput type="search" placeholder="Enter article..."
+                    [value]="articleSearch()" (input)="articleSearch.set(articleInput.value)" />
+            </th>
+            <th> <label for="status-filter">Status</label>
 
                 <select id="status-filter" #statusSelect [value]="selectedStatus()"
                     (change)="selectedStatus.set(statusSelect.value)">
@@ -23,7 +29,8 @@
                     @for (status of availableStatuses(); track status) {
                     <option [value]="status">{{ status }}</option>
                     }
-                </select></th>
+                </select>
+            </th>
             <th>Location</th>
         </tr>
     </thead>
