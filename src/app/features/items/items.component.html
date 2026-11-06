@@ -1,10 +1,6 @@
 <h2>Items</h2>
+
 <p>Showing {{ filteredItems().length }} of {{ items().length }} items</p>
-
-
-
-
-
 
 <table>
     <thead>
@@ -20,16 +16,30 @@
                 <input id="article-search" #articleInput type="search" placeholder="Enter article..."
                     [value]="articleSearch()" (input)="articleSearch.set(articleInput.value)" />
             </th>
-            <th> <label for="status-filter">Status</label>
-
-                <select id="status-filter" #statusSelect [value]="selectedStatus()"
-                    (change)="selectedStatus.set(statusSelect.value)">
-                    <option value="">All statuses</option>
-
-                    @for (status of availableStatuses(); track status) {
-                    <option [value]="status">{{ status }}</option>
+            <th class="status-filter">
+                <button type="button" class="status-filter-trigger" [attr.aria-expanded]="isStatusFilterOpen()"
+                    aria-controls="status-filter-panel" (click)="toggleStatusFilter()">
+                    Status
+                    @if (selectedStatuses().length > 0) {
+                    ({{ selectedStatuses().length }})
                     }
-                </select>
+                    ▾
+                </button>
+
+                @if (isStatusFilterOpen()) {
+                <div id="status-filter-panel" class="status-filter-panel">
+                    @for (status of visibleStatuses(); track status) {
+                    <label class="status-option">
+                        <input type="checkbox" [checked]="selectedStatuses().includes(status)"
+                            (change)="toggleStatus(status)" />
+                        {{ status }}
+                        @if (!availableStatuses().includes(status)) {
+                        <small>— 0 items</small>
+                        }
+                    </label>
+                    }
+                </div>
+                }
             </th>
             <th>Location</th>
         </tr>

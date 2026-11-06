@@ -12,8 +12,9 @@ export class ItemsComponent {
   private readonly warehouseData = inject(WarehouseDataService);
   protected readonly search = signal('');
   protected readonly articleSearch = signal('');
-  protected readonly selectedStatus = signal('');
+  protected readonly selectedStatuses = signal<string[]>([]);
   protected readonly selectedLocation = signal('');
+  protected readonly isStatusFilterOpen = signal(false);
 
   protected readonly items = computed(
     () => this.warehouseData.confirmedImport()?.data.items ?? [],
@@ -26,40 +27,35 @@ export class ItemsComponent {
     return new Map(articles.map(article => [article.id, article]));
   });
 
-  protected readonly filteredItems = computed(() => {
+  protected readonly itemsWithoutStatusFilter = computed(() => {
     const query = this.search().trim().toUpperCase();
     const articleQuery = this.articleSearch().trim().toUpperCase();
-    const articles = this.articlesById();
-    const status = this.selectedStatus();
     const location = this.selectedLocation();
+    const articles = this.articlesById();
 
     return this.items().filter(item => {
-      const matchesSearch =
-        item.hCode.toUpperCase().includes(query);
-
       const articleName =
         articles.get(item.articleId)?.articleName ?? '';
 
-      const matchesArticle =
-        articleName.toUpperCase().includes(articleQuery);
-
-      const matchesStatus =
-        status === '' || item.status === status;
-
-      const matchesLocation =
-        location === '' || item.locationCode === location;
-
       return (
-        matchesSearch &&
-        matchesArticle &&
-        matchesStatus &&
-        matchesLocation
+        item.hCode.toUpperCase().includes(query) &&
+        articleName.toUpperCase().includes(articleQuery) &&
+        (location === '' || item.locationCode === location)
       );
     });
   });
 
+  protected readonly filteredItems = computed(() => {
+    const statuses = this.selectedStatuses();
+
+    return this.itemsWithoutStatusFilter().filter(item =>
+      statuses.length === 0 ||
+      statuses.includes(item.status ?? '')
+    );
+  });
+
   protected readonly availableStatuses = computed(() => {
-    const statuses = this.items()
+    const statuses = this.itemsWithoutStatusFilter()
       .map(item => item.status)
       .filter((status): status is string =>
         status !== null &&
@@ -71,6 +67,15 @@ export class ItemsComponent {
       .sort((a, b) => a.localeCompare(b));
   });
 
+  protected readonly visibleStatuses = computed(() => {
+    return [
+      ...new Set([
+        ...this.availableStatuses(),
+        ...this.selectedStatuses(),
+      ]),
+    ].sort((a, b) => a.localeCompare(b));
+  });
+
   protected readonly availableArticles = computed(() => {
     const articles = [...this.articlesById().values()];
 
@@ -78,6 +83,20 @@ export class ItemsComponent {
       (a.articleName ?? '').localeCompare(b.articleName ?? '')
     );
   });
+
+  protected toggleStatus(status: string): void {
+    this.selectedStatuses.update(statuses => {
+      if (statuses.includes(status)) {
+        return statuses.filter(value => value !== status);
+      }
+
+      return [...statuses, status];
+    });
+  }
+
+  protected toggleStatusFilter(): void {
+    this.isStatusFilterOpen.update(isOpen => !isOpen);
+  }
 }
 
 
