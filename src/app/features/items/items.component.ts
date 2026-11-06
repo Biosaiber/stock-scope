@@ -15,6 +15,7 @@ export class ItemsComponent {
   protected readonly selectedStatuses = signal<string[]>([]);
   protected readonly selectedLocation = signal('');
   protected readonly isStatusFilterOpen = signal(false);
+  protected readonly statusSearch = signal('');
 
   protected readonly items = computed(
     () => this.warehouseData.confirmedImport()?.data.items ?? [],
@@ -76,6 +77,14 @@ export class ItemsComponent {
     ].sort((a, b) => a.localeCompare(b));
   });
 
+  protected readonly searchedStatuses = computed(() => {
+    const query = this.statusSearch().trim().toLocaleUpperCase();
+
+    return this.visibleStatuses().filter(status =>
+      status.toUpperCase().includes(query)
+    );
+  })
+
   protected readonly availableArticles = computed(() => {
     const articles = [...this.articlesById().values()];
 
@@ -98,12 +107,3 @@ export class ItemsComponent {
     this.isStatusFilterOpen.update(isOpen => !isOpen);
   }
 }
-
-
-
-/*   protected readonly articlesById = computed(() => {
-    const articles =
-      this.warehouseData.confirmedImport()?.data.articles ?? [];
-
-    return new Map(articles.map(article => [article.id, article]));
-  }); */

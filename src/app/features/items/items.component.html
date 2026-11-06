@@ -28,7 +28,9 @@
 
                 @if (isStatusFilterOpen()) {
                 <div id="status-filter-panel" class="status-filter-panel">
-                    @for (status of visibleStatuses(); track status) {
+                    <label for="status-search">Search statuses</label>
+                    <input id="status-search" #statusSearchInput type="search" placeholder="Find a status..." [value]="statusSearch()"   (input)="statusSearch.set(statusSearchInput.value)">
+                    @for (status of searchedStatuses(); track status) {
                     <label class="status-option">
                         <input type="checkbox" [checked]="selectedStatuses().includes(status)"
                             (change)="toggleStatus(status)" />
