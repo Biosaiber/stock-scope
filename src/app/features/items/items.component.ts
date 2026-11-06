@@ -106,4 +106,16 @@ export class ItemsComponent {
   protected toggleStatusFilter(): void {
     this.isStatusFilterOpen.update(isOpen => !isOpen);
   }
+
+  protected selectAllStatusResults(): void {
+    const results = this.searchedStatuses();
+
+    this.selectedStatuses.update(selected =>
+      [...new Set([...selected, ...results])]
+    )
+  }
+
+  protected clearStatusFilter(): void {
+    this.selectedStatuses.set([]);
+  }
 }

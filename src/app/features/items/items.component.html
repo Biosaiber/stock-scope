@@ -29,7 +29,20 @@
                 @if (isStatusFilterOpen()) {
                 <div id="status-filter-panel" class="status-filter-panel">
                     <label for="status-search">Search statuses</label>
-                    <input id="status-search" #statusSearchInput type="search" placeholder="Find a status..." [value]="statusSearch()"   (input)="statusSearch.set(statusSearchInput.value)">
+                    <input id="status-search" #statusSearchInput type="search" placeholder="Find a status..."
+                        [value]="statusSearch()" (input)="statusSearch.set(statusSearchInput.value)">
+
+                    <div class="status-filter-actions">
+                        <button type="button" (click)="selectAllStatusResults()"
+                            [disabled]="searchedStatuses().length === 0">
+                            Select all results
+                        </button>
+
+                        <button type="button" (click)="clearStatusFilter()"
+                            [disabled]="selectedStatuses().length === 0">
+                            Clear filter
+                        </button>
+                    </div>
                     @for (status of searchedStatuses(); track status) {
                     <label class="status-option">
                         <input type="checkbox" [checked]="selectedStatuses().includes(status)"

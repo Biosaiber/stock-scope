@@ -63,3 +63,10 @@ th {
   padding: 6px 0;
   font-weight: 400;
 }
+
+.status-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 12px;
+}
