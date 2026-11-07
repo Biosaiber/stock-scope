@@ -118,4 +118,8 @@ export class ItemsComponent {
   protected clearStatusFilter(): void {
     this.selectedStatuses.set([]);
   }
+
+  protected closeStatusFilter(): void {
+    this.isStatusFilterOpen.set(false);
+  }
 }

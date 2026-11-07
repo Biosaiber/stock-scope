@@ -5,7 +5,8 @@
 <table>
     <thead>
         <tr>
-            <th><label for="item-search">Search by H-code</label>
+            <th>
+                <label for="item-search">Search by H-code</label>
 
                 <input id="item-search" #searchInput type="search" placeholder="Enter H-code..." [value]="search()"
                     (input)="search.set(searchInput.value)" />
@@ -16,8 +17,8 @@
                 <input id="article-search" #articleInput type="search" placeholder="Enter article..."
                     [value]="articleSearch()" (input)="articleSearch.set(articleInput.value)" />
             </th>
-            <th class="status-filter">
-                <button type="button" class="status-filter-trigger" [attr.aria-expanded]="isStatusFilterOpen()"
+            <th class="status-filter" #statusFilter (document:click)="statusFilter.contains($any($event.target))? null : closeStatusFilter()" (keydown.escape)="closeStatusFilter(); statusTrigger.focus(); $event.stopPropagation()">
+                <button #statusTrigger type="button" class="status-filter-trigger" [attr.aria-expanded]="isStatusFilterOpen()"
                     aria-controls="status-filter-panel" (click)="toggleStatusFilter()">
                     Status
                     @if (selectedStatuses().length > 0) {
