@@ -13,9 +13,12 @@ export class ItemsComponent {
   protected readonly search = signal('');
   protected readonly articleSearch = signal('');
   protected readonly selectedStatuses = signal<string[]>([]);
-  protected readonly selectedLocation = signal('');
+  protected readonly selectedLocations = signal<string[]>([]);
   protected readonly isStatusFilterOpen = signal(false);
   protected readonly statusSearch = signal('');
+  protected readonly locationSearch = signal('');
+  protected readonly isLocationFilterOpen = signal(false);
+
 
   protected readonly items = computed(
     () => this.warehouseData.confirmedImport()?.data.items ?? [],
@@ -31,7 +34,7 @@ export class ItemsComponent {
   protected readonly itemsWithoutStatusFilter = computed(() => {
     const query = this.search().trim().toUpperCase();
     const articleQuery = this.articleSearch().trim().toUpperCase();
-    const location = this.selectedLocation();
+    const locations = this.selectedLocations();
     const articles = this.articlesById();
 
     return this.items().filter(item => {
@@ -41,10 +44,56 @@ export class ItemsComponent {
       return (
         item.hCode.toUpperCase().includes(query) &&
         articleName.toUpperCase().includes(articleQuery) &&
-        (location === '' || item.locationCode === location)
+        (locations.length === 0 ||
+          locations.includes(item.locationCode ?? ''))
       );
     });
   });
+
+  protected readonly itemsWithoutLocationFilter = computed(() => {
+    const query = this.search().trim().toUpperCase();
+    const articleQuery = this.articleSearch().trim().toUpperCase();
+    const statuses = this.selectedStatuses();
+    const articles = this.articlesById();
+
+    return this.items().filter(item => {
+      const articleName = articles.get(item.articleId)?.articleName ?? '';
+
+      return (
+        item.hCode.toUpperCase().includes(query) &&
+        articleName.toUpperCase().includes(articleQuery) &&
+        (statuses.length === 0 ||
+          statuses.includes(item.status ?? ''))
+      );
+    });
+  });
+
+  protected readonly availableLocations = computed(() => {
+    const locations = this.itemsWithoutLocationFilter()
+      .map(item => item.locationCode)
+      .filter((location): location is string =>
+        location !== null &&
+        location !== undefined &&
+        location !== ''
+      );
+
+    return [...new Set(locations)]
+      .sort((a, b) => a.localeCompare(b));
+  })
+
+  protected readonly visibleLocations = computed(() => {
+    return [...new Set([
+      ...this.availableLocations(),
+      ...this.selectedLocations(),
+    ])].sort((a, b) => a.localeCompare(b));
+  })
+
+  protected readonly searchedLocations = computed(() => {
+    const query = this.locationSearch().trim().toUpperCase();
+    return this.visibleLocations().filter(location =>
+      location.toUpperCase().includes(query)
+    );
+  })
 
   protected readonly filteredItems = computed(() => {
     const statuses = this.selectedStatuses();
@@ -122,4 +171,36 @@ export class ItemsComponent {
   protected closeStatusFilter(): void {
     this.isStatusFilterOpen.set(false);
   }
+
+  protected toggleLocation(location: string): void {
+    this.selectedLocations.update(locations => {
+      if (locations.includes(location)) {
+        return locations.filter(value => value !== location);
+      }
+
+      return [...locations, location];
+    });
+  }
+
+  protected toggleLocationFilter(): void {
+    this.isLocationFilterOpen.update(isOpen => !isOpen);
+  }
+
+  protected closeLocationFilter(): void {
+    this.isLocationFilterOpen.set(false);
+  }
+
+  protected selectAllLocationResults(): void {
+  const results = this.searchedLocations();
+
+  this.selectedLocations.update(selected =>
+    [...new Set([...selected, ...results])]
+  );
+}
+
+protected clearLocationFilter(): void {
+  this.selectedLocations.set([]);
+}
+
+
 }

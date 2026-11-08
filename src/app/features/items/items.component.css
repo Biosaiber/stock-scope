@@ -70,3 +70,12 @@ th {
   gap: 8px;
   margin-block: 12px;
 }
+
+.location-filter {
+  position: relative;
+}
+
+.location-filter-panel {
+  left: auto;
+  right: 0;
+}

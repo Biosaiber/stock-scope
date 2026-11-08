@@ -17,9 +17,12 @@
                 <input id="article-search" #articleInput type="search" placeholder="Enter article..."
                     [value]="articleSearch()" (input)="articleSearch.set(articleInput.value)" />
             </th>
-            <th class="status-filter" #statusFilter (document:click)="statusFilter.contains($any($event.target))? null : closeStatusFilter()" (keydown.escape)="closeStatusFilter(); statusTrigger.focus(); $event.stopPropagation()">
-                <button #statusTrigger type="button" class="status-filter-trigger" [attr.aria-expanded]="isStatusFilterOpen()"
-                    aria-controls="status-filter-panel" (click)="toggleStatusFilter()">
+            <th class="status-filter" #statusFilter
+                (document:click)="statusFilter.contains($any($event.target))? null : closeStatusFilter()"
+                (keydown.escape)="closeStatusFilter(); statusTrigger.focus(); $event.stopPropagation()">
+                <button #statusTrigger type="button" class="status-filter-trigger"
+                    [attr.aria-expanded]="isStatusFilterOpen()" aria-controls="status-filter-panel"
+                    (click)="toggleStatusFilter()">
                     Status
                     @if (selectedStatuses().length > 0) {
                     ({{ selectedStatuses().length }})
@@ -57,7 +60,58 @@
                 </div>
                 }
             </th>
-            <th>Location</th>
+            <th class="location-filter" #locationFilter (document:click)="
+          locationFilter.contains($any($event.target))
+            ? null
+            : closeLocationFilter()
+        " (keydown.escape)="
+          closeLocationFilter();
+          locationTrigger.focus();
+          $event.stopPropagation()
+        ">
+                <button #locationTrigger type="button" class="status-filter-trigger"
+                    [attr.aria-expanded]="isLocationFilterOpen()" aria-controls="location-filter-panel"
+                    (click)="toggleLocationFilter()">
+                    Location
+                    @if (selectedLocations().length > 0) {
+                    ({{ selectedLocations().length }})
+                    }
+                    ▾
+                </button>
+
+                @if (isLocationFilterOpen()) {
+                <div id="location-filter-panel" class="status-filter-panel location-filter-panel">
+                    <label for="location-search">Search locations</label>
+
+                    <input id="location-search" #locationSearchInput type="search" placeholder="Find a location..."
+                        [value]="locationSearch()" (input)="locationSearch.set(locationSearchInput.value)" />
+                    <div class="status-filter-actions">
+                        <button type="button" (click)="selectAllLocationResults()"
+                            [disabled]="searchedLocations().length === 0">
+                            Select all results
+                        </button>
+                        <button type="button" (click)="clearLocationFilter()"
+                            [disabled]="selectedLocations().length === 0">
+                            Clear filter
+                        </button>
+                    </div>
+                    @for (location of searchedLocations(); track location) {
+                    <label class="status-option">
+                        <input type="checkbox" [checked]="selectedLocations().includes(location)"
+                            (change)="toggleLocation(location)" />
+
+                        {{ location }}
+
+                        @if (!availableLocations().includes(location)) {
+                        <small>— 0 items</small>
+                        }
+                    </label>
+                    } @empty {
+                    <p>No locations match your search.</p>
+                    }
+                </div>
+                }
+            </th>
         </tr>
     </thead>
 
