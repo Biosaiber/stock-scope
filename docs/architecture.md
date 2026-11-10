@@ -1737,21 +1737,16 @@ The page should make it possible to find individual objects and compare items ac
 
 ### Search
 
-The Items page should provide a single reactive search field.
+The Items page provides a reactive H-code search field.
 
-Phase 1 search should support:
+The search matches any part of the Item H-code, ignores letter case
+and trims leading and trailing whitespace.
 
-- H-code
-- article
-- customer article number
+Typing updates the visible table immediately.
 
-Examples:
-
-`H398913`
-
-`ZEISS022`
-
-`4022.674.1152x`
+Article names are searched inside the Article filter dropdown.
+Dropdown search narrows the offered options; it does not directly
+filter the Items table until options are selected.
 
 ### Filters
 
@@ -1785,6 +1780,70 @@ The page should also show how many items match the current filters.
 Example:
 
 `Showing 37 of 4,382 items`
+
+#### Multi-select Dropdown Behaviour
+
+Article, Status and Location filters use dropdown panels containing:
+
+- search within the offered options
+- checkboxes for selecting multiple values
+- Select all results
+- Clear filter
+- a scrollable list with a limited maximum height
+
+Article options display Article names but store Article IDs.
+Article options are sorted by their displayed names.
+
+An empty selection means that the filter does not restrict results.
+
+Each dropdown calculates its available options using the H-code search
+and the selections in the other filter groups. Its own selection is
+excluded from this calculation so users can select additional values.
+
+Selected options remain visible even when they no longer match the
+other filters. Such options display `0 items` and can still be deselected.
+
+Search within a dropdown narrows its option list without changing
+existing selections.
+
+Select all results adds all options matching the dropdown search
+to the existing selection. Previously selected options are preserved.
+
+Clear filter removes all selections in that filter group,
+including selections hidden by the dropdown search.
+It preserves the dropdown search text.
+
+The dropdown trigger displays the total number of selected options,
+including selections hidden by search or currently matching no Items.
+
+Dropdowns close when their trigger is clicked again, when the user
+clicks outside, or when Escape is pressed while focus is inside.
+Escape returns focus to the dropdown trigger.
+
+Filtering does not modify imported warehouse data.
+
+#### Current Items Filtering Implementation Status
+
+The current implementation provides:
+
+- reactive H-code search
+- Article, Status and Location multi-select dropdowns
+- dropdown search and selection actions
+- dynamic options based on the other active filters
+- preservation of selected options with no matching Items
+- matching and total Item counts
+- outside-click and Escape dismissal
+
+The following capabilities remain planned:
+
+- Review, Size and Call Off filters
+- a page-level Clear All action
+- query parameter integration for filters and sorting
+
+Article selections currently use import-derived Article IDs.
+Preserving Article selections across different imports requires
+the stable identity or reconciliation strategy described in
+Article Grouping and Identity.
 
 ### Size Filter
 
