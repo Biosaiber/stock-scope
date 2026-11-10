@@ -11,11 +11,51 @@
                 <input id="item-search" #searchInput type="search" placeholder="Enter H-code..." [value]="search()"
                     (input)="search.set(searchInput.value)" />
             </th>
-            <th>
-                <label for="article-search">Article</label>
+            <th class="article-filter" #articleFilter
+                (document:click)="articleFilter.contains($any($event.target))? null : closeArticleFilter()"
+                (keydown.escape)="closeArticleFilter(); articleTrigger.focus(); $event.stopPropagation()">
+                <button #articleTrigger type="button" class="article-filter-trigger"
+                    [attr.aria-expanded]="isArticleFilterOpen()" aria-controls="article-filter-panel"
+                    (click)="toggleArticleFilter()">
+                    Article
+                    @if (selectedArticles().length > 0) {
+                    ({{ selectedArticles().length }})
+                    }
+                    ▾
+                </button>
+                @if (isArticleFilterOpen()) {
+                <div id="article-filter-panel" class="article-filter-panel">
+                    <label for="article-search">Search articles</label>
+                    <input id="article-search" #articleSearchInput type="search" placeholder="Find an article..."
+                        [value]="articleSearch()" (input)="articleSearch.set(articleSearchInput.value)">
 
-                <input id="article-search" #articleInput type="search" placeholder="Enter article..."
-                    [value]="articleSearch()" (input)="articleSearch.set(articleInput.value)" />
+                    <div class="article-filter-actions">
+                        <button type="button" (click)="selectAllArticleResults()"
+                            [disabled]="searchedArticles().length === 0">
+                            Select all results
+                        </button>
+
+                        <button type="button" (click)="clearArticleFilter()"
+                            [disabled]="selectedArticles().length === 0">
+                            Clear filter
+                        </button>
+                    </div>
+                    @for (article of searchedArticles(); track article) {
+                    <label class="article-option">
+                        <input type="checkbox" [checked]="selectedArticles().includes(article)"
+                            (change)="toggleArticle(article)" />
+                        {{ articlesById().get(article)?.articleName ?? 'Unknown' }}
+                        @if (!availableArticles().includes(article)) {
+                        <small>— 0 items</small>
+                        }
+                    </label>
+                    }
+                    @empty {
+                    <p>No articles match your search.</p>
+                    }
+                </div>
+                }
+
             </th>
             <th class="status-filter" #statusFilter
                 (document:click)="statusFilter.contains($any($event.target))? null : closeStatusFilter()"
@@ -56,6 +96,8 @@
                         <small>— 0 items</small>
                         }
                     </label>
+                    } @empty {
+                    <p>No locations match your search.</p>
                     }
                 </div>
                 }
@@ -80,12 +122,12 @@
                 </button>
 
                 @if (isLocationFilterOpen()) {
-                <div id="location-filter-panel" class="status-filter-panel location-filter-panel">
+                <div id="location-filter-panel" class="location-filter-panel">
                     <label for="location-search">Search locations</label>
 
                     <input id="location-search" #locationSearchInput type="search" placeholder="Find a location..."
                         [value]="locationSearch()" (input)="locationSearch.set(locationSearchInput.value)" />
-                    <div class="status-filter-actions">
+                    <div class="location-filter-actions">
                         <button type="button" (click)="selectAllLocationResults()"
                             [disabled]="searchedLocations().length === 0">
                             Select all results
@@ -96,7 +138,7 @@
                         </button>
                     </div>
                     @for (location of searchedLocations(); track location) {
-                    <label class="status-option">
+                    <label class="location-option">
                         <input type="checkbox" [checked]="selectedLocations().includes(location)"
                             (change)="toggleLocation(location)" />
 

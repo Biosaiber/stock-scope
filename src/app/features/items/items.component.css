@@ -20,17 +20,17 @@ th {
   color: white;
 }
 
-.status-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 
-.status-filter {
+
+.status-filter,
+.article-filter,
+.location-filter {
   position: relative;
 }
 
-.status-filter-trigger {
+.status-filter-trigger,
+.location-filter-trigger,
+.article-filter-trigger {
   padding: 6px 10px;
   border: 1px solid white;
   border-radius: 4px;
@@ -40,7 +40,8 @@ th {
   cursor: pointer;
 }
 
-.status-filter-panel {
+.status-filter-panel,
+.article-filter-panel {
   position: absolute;
   top: 100%;
   left: 0;
@@ -56,7 +57,25 @@ th {
   box-shadow: 0 6px 18px rgb(0 0 0 / 15%);
 }
 
-.status-option {
+.location-filter-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+  width: 280px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  color: #222;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 15%);
+}
+
+.status-option,
+.location-option,
+.article-option {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -64,18 +83,15 @@ th {
   font-weight: 400;
 }
 
-.status-filter-actions {
+.status-filter-actions,
+.location-filter-actions,
+.article-filter-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-block: 12px;
 }
 
-.location-filter {
-  position: relative;
-}
 
-.location-filter-panel {
-  left: auto;
-  right: 0;
-}
+
+
